@@ -1,51 +1,59 @@
 package org.example.model;
 
-import java.io.Serializable;
+import javax.persistence.*;
+import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.Size;
+import java.time.LocalDateTime;
 
-public class User implements Serializable {
-    private static final long serialVersionUID = 1L;
+@Entity
+@Table(name = "users")
+public class User {
+    
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Integer id;
 
-    // 用户ID
-    private int id;
-
-    // 用户名
+    @Column(unique = true, nullable = false)
+    @NotBlank(message = "用户名不能为空")
+    @Size(min = 3, max = 50, message = "用户名长度必须在3-50个字符之间")
     private String username;
 
-    // 密码（存储时应该是加密后的）
+    @Column(nullable = false)
+    @NotBlank(message = "密码不能为空")
+    @Size(min = 6, message = "密码长度不能少于6位")
     private String password;
 
-    // 邮箱
+    @Column(unique = true)
     private String email;
 
-    // 真实姓名
+    @Column(name = "real_name")
     private String realName;
 
-    // 创建时间
-    private String createTime;
+    @Column(name = "create_time", columnDefinition = "DATETIME")
+    private LocalDateTime createTime;
 
-    // 最后登录时间
-    private String lastLoginTime;
+    @Column(name = "last_login_time", columnDefinition = "DATETIME")
+    private LocalDateTime lastLoginTime;
 
-    // 用户状态（0：禁用，1：启用）
-    private int status;
+    @Column(nullable = false)
+    private Integer status = 1; // 默认启用
 
     // 默认构造函数
     public User() {
     }
 
     // 带参数的构造函数
-    public User(int id, String username, String password) {
-        this.id = id;
+    public User(String username, String password) {
         this.username = username;
         this.password = password;
     }
 
     // Getter和Setter方法
-    public int getId() {
+    public Integer getId() {
         return id;
     }
 
-    public void setId(int id) {
+    public void setId(Integer id) {
         this.id = id;
     }
 
@@ -81,27 +89,27 @@ public class User implements Serializable {
         this.realName = realName;
     }
 
-    public String getCreateTime() {
+    public LocalDateTime getCreateTime() {
         return createTime;
     }
 
-    public void setCreateTime(String createTime) {
+    public void setCreateTime(LocalDateTime createTime) {
         this.createTime = createTime;
     }
 
-    public String getLastLoginTime() {
+    public LocalDateTime getLastLoginTime() {
         return lastLoginTime;
     }
 
-    public void setLastLoginTime(String lastLoginTime) {
+    public void setLastLoginTime(LocalDateTime lastLoginTime) {
         this.lastLoginTime = lastLoginTime;
     }
 
-    public int getStatus() {
+    public Integer getStatus() {
         return status;
     }
 
-    public void setStatus(int status) {
+    public void setStatus(Integer status) {
         this.status = status;
     }
 
