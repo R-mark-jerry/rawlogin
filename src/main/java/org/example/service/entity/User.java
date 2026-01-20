@@ -1,10 +1,14 @@
-package org.example.model;
+package org.example.service.entity;
 
 import javax.persistence.*;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.Size;
 import java.time.LocalDateTime;
 
+/**
+ * 用户实体
+ * 简化版的用户实体，适合常见的分层架构
+ */
 @Entity
 @Table(name = "users")
 public class User {

@@ -78,7 +78,7 @@
         
         <div th:if="${error}" class="error" th:text="${error}"></div>
         
-        <form action="#" th:action="@{/register}" method="post">
+        <form action="#" th:action="@{/myfirst/register}" method="post">
             <div class="form-group">
                 <label for="username">用户名:</label>
                 <input type="text" id="username" name="username" required>
@@ -105,7 +105,7 @@
         </form>
         
         <div class="login-link">
-            <p>已有账户? <a th:href="@{/}">立即登录</a></p>
+            <p>已有账户? <a th:href="@{/myfirst/}">立即登录</a></p>
         </div>
     </div>
 </body>

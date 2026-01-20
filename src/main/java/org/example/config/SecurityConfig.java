@@ -35,9 +35,15 @@ public class SecurityConfig {
             )
             // 禁用Spring Security的默认表单登录，使用我们自定义的登录逻辑
             .formLogin(form -> form.disable())
-            // 禁用Spring Security的默认登出，使用我们自定义的登出逻辑
-            .logout(logout -> logout.disable());
-            
+            // 配置自定义登出处理
+            .logout(logout -> logout
+                .logoutUrl("/myfirst/logout")
+                .invalidateHttpSession(true)
+                .clearAuthentication(true)
+                .deleteCookies("JSESSIONID")
+                .permitAll()
+            );
+           
         return http.build();
     }
 

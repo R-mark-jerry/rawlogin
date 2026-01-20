@@ -246,7 +246,9 @@
         <h1>用户管理系统</h1>
         <div class="user-info">
             <span>欢迎, <span th:text="${user.username}">用户名</span></span>
-            <a th:href="@{/logout}" class="logout-btn">退出登录</a>
+            <form th:action="@{/myfirst/logout}" method="post" style="display: inline;">
+                <button type="submit" class="logout-btn">退出登录</button>
+            </form>
         </div>
     </nav>
     

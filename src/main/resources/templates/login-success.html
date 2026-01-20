@@ -54,8 +54,8 @@
     <div class="container">
         <div class="success-icon">✓</div>
         <h2>注册成功!</h2>
-        <p class="message" th:text="${message}">注册成功，请使用您的账户登录</p>
-        <button onclick="window.location.href='/'">前往登录</button>
+        <p class="message" th:text="${param.message != null ? param.message[0] : (message != null ? message : '注册成功，请使用您的账户登录')}">注册成功，请使用您的账户登录</p>
+        <button onclick="window.location.href='/myfirst/'">前往登录</button>
     </div>
 </body>
 </html>
