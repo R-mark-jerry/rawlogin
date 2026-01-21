@@ -1,7 +1,8 @@
 package com.rawlogin.service.impl;
 
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.rawlogin.common.Result;
-import com.rawlogin.repository.UserRepository;
+import com.rawlogin.mapper.UserMapper;
 import com.rawlogin.service.UserService;
 import com.rawlogin.service.entity.User;
 import org.slf4j.Logger;
@@ -22,7 +23,7 @@ public class UserServiceImpl implements UserService {
     private static final Logger logger = LoggerFactory.getLogger(UserServiceImpl.class);
     
     @Autowired
-    private UserRepository userRepository;
+    private UserMapper userMapper;
     
     @Autowired
     private PasswordEncoder passwordEncoder;
@@ -42,13 +43,14 @@ public class UserServiceImpl implements UserService {
             }
             
             // 查找用户
-            Result<User> userResult = userRepository.findByUsername(username);
-            if (!userResult.isSuccess()) {
+            QueryWrapper<User> queryWrapper = new QueryWrapper<>();
+            queryWrapper.eq("username", username);
+            User user = userMapper.selectOne(queryWrapper);
+            
+            if (user == null) {
                 logger.warn("用户不存在: {}", username);
                 return Result.error("用户名或密码错误");
             }
-            
-            User user = userResult.getData();
             
             // 验证密码
             if (!passwordEncoder.matches(password, user.getPassword())) {
@@ -63,13 +65,10 @@ public class UserServiceImpl implements UserService {
             }
             
             // 更新最后登录时间
-            userRepository.updateLastLoginTime(user.getId());
+            userMapper.updateLastLoginTime(user.getId());
             
             // 重新查询用户信息以获取更新后的最后登录时间
-            Result<User> updatedUserResult = userRepository.findByUsername(username);
-            if (updatedUserResult.isSuccess()) {
-                user = updatedUserResult.getData();
-            }
+            user = userMapper.selectOne(queryWrapper);
             
             // 清除密码信息，不返回给前端
             user.setPassword(null);
@@ -106,8 +105,10 @@ public class UserServiceImpl implements UserService {
             }
             
             // 检查用户名是否已存在
-            Result<User> existUserResult = userRepository.findByUsername(user.getUsername());
-            if (existUserResult.isSuccess()) {
+            QueryWrapper<User> existQueryWrapper = new QueryWrapper<>();
+            existQueryWrapper.eq("username", user.getUsername());
+            User existUser = userMapper.selectOne(existQueryWrapper);
+            if (existUser != null) {
                 logger.warn("用户名已存在: {}", user.getUsername());
                 return Result.error("用户名已存在");
             }
@@ -120,18 +121,25 @@ public class UserServiceImpl implements UserService {
             user.setCreateTime(LocalDateTime.now());
             user.setStatus(1); // 默认状态为启用
             
+            // 处理email和realName为空字符串的情况，转换为null
+            if (user.getEmail() != null && user.getEmail().trim().isEmpty()) {
+                user.setEmail(null);
+            }
+            if (user.getRealName() != null && user.getRealName().trim().isEmpty()) {
+                user.setRealName(null);
+            }
+            
             // 保存用户
-            Result<User> saveResult = userRepository.save(user);
-            if (!saveResult.isSuccess()) {
+            int result = userMapper.insert(user);
+            if (result <= 0) {
                 return Result.error("注册失败，请稍后再试");
             }
             
             // 清除密码信息，不返回给前端
-            User savedUser = saveResult.getData();
-            savedUser.setPassword(null);
+            user.setPassword(null);
             
             logger.info("用户注册成功: {}", user.getUsername());
-            return Result.success("注册成功", savedUser);
+            return Result.success("注册成功", user);
             
         } catch (Exception e) {
             logger.error("注册过程中发生异常", e);
@@ -142,7 +150,15 @@ public class UserServiceImpl implements UserService {
     @Override
     public Result<User> findByUsername(String username) {
         try {
-            return userRepository.findByUsername(username);
+            QueryWrapper<User> queryWrapper = new QueryWrapper<>();
+            queryWrapper.eq("username", username);
+            User user = userMapper.selectOne(queryWrapper);
+            
+            if (user == null) {
+                return Result.error("用户不存在");
+            }
+            
+            return Result.success("找到用户", user);
         } catch (Exception e) {
             logger.error("根据用户名查找用户时发生异常: {}", username, e);
             return Result.error("系统错误，请稍后再试");
@@ -152,7 +168,13 @@ public class UserServiceImpl implements UserService {
     @Override
     public Result<User> findById(Integer id) {
         try {
-            return userRepository.findById(id);
+            User user = userMapper.selectById(id);
+            
+            if (user == null) {
+                return Result.error("用户不存在");
+            }
+            
+            return Result.success("找到用户", user);
         } catch (Exception e) {
             logger.error("根据ID查找用户时发生异常: {}", id, e);
             return Result.error("系统错误，请稍后再试");
@@ -162,7 +184,13 @@ public class UserServiceImpl implements UserService {
     @Override
     public Result<Void> updateLastLoginTime(Integer userId) {
         try {
-            return userRepository.updateLastLoginTime(userId);
+            int result = userMapper.updateLastLoginTime(userId);
+            
+            if (result > 0) {
+                return Result.success("更新成功");
+            } else {
+                return Result.error("用户不存在");
+            }
         } catch (Exception e) {
             logger.error("更新用户最后登录时间时发生异常: {}", userId, e);
             return Result.error("系统错误，请稍后再试");

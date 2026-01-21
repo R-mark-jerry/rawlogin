@@ -7,7 +7,6 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.web.session.HttpSessionEventPublisher;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
@@ -40,14 +39,6 @@ public class SecurityConfig {
             )
             // 禁用Spring Security的默认表单登录，使用我们自定义的登录逻辑
             .formLogin(form -> form.disable())
-            // 配置自定义登出处理
-            .logout(logout -> logout
-                .logoutUrl("/myfirst/logout")
-                .invalidateHttpSession(true)
-                .clearAuthentication(true)
-                .deleteCookies("JSESSIONID")
-                .permitAll()
-            )
             // 配置CORS
             .cors(cors -> cors.configurationSource(corsConfigurationSource()));
            
@@ -64,15 +55,6 @@ public class SecurityConfig {
     }
     
     /**
-     * HTTP会话事件发布器
-     * @return 会话事件发布器
-     */
-    @Bean
-    public HttpSessionEventPublisher httpSessionEventPublisher() {
-        return new HttpSessionEventPublisher();
-    }
-    
-    /**
      * CORS配置源Bean
      * @return CORS配置源
      */
@@ -81,7 +63,7 @@ public class SecurityConfig {
         CorsConfiguration configuration = new CorsConfiguration();
         
         // 允许的源
-        configuration.setAllowedOrigins(Arrays.asList("http://localhost:3000"));
+        configuration.setAllowedOrigins(Arrays.asList("http://localhost:3000", "http://127.0.0.1:5500", "http://localhost:5500"));
         
         // 允许的HTTP方法
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
@@ -97,9 +79,7 @@ public class SecurityConfig {
         
         // 应用配置
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/api/**", configuration);
-        source.registerCorsConfiguration("/register", configuration);
-        source.registerCorsConfiguration("/logout", configuration);
+        source.registerCorsConfiguration("/auth/**", configuration);
         
         return source;
     }

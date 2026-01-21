@@ -9,7 +9,7 @@ class ApiClient {
             baseURL: baseURL,
             timeout: 10000,
             headers: {
-                'Content-Type': 'application/x-www-form-urlencoded'
+                'Content-Type': 'application/json'
             },
             withCredentials: true // 重要：支持跨域cookie
         });
@@ -43,13 +43,10 @@ class ApiClient {
     async login(username, password, remember = false) {
         try {
             console.log('API客户端：准备发送登录请求', { username, remember });
-            const response = await this.axios.post('/api/ajax-login',
-                new URLSearchParams({
-                    username: username,
-                    password: password,
-                    remember: remember
-                })
-            );
+            const response = await this.axios.post('/auth/login', {
+                username: username,
+                password: password
+            });
             console.log('API客户端：收到登录响应', response.data);
             return response.data;
         } catch (error) {
@@ -61,14 +58,12 @@ class ApiClient {
     // 注册
     async register(username, password, email = '', realName = '') {
         try {
-            const response = await this.axios.post('/api/user/register',
-                new URLSearchParams({
-                    username: username,
-                    password: password,
-                    email: email,
-                    realName: realName
-                })
-            );
+            const response = await this.axios.post('/auth/register', {
+                username: username,
+                password: password,
+                email: email,
+                realName: realName
+            });
             return response.data;
         } catch (error) {
             throw this.handleError(error);
@@ -79,7 +74,7 @@ class ApiClient {
     async getCurrentUser() {
         try {
             console.log('API客户端：获取当前用户信息');
-            const response = await this.axios.get('/api/user/current');
+            const response = await this.axios.get('/auth/current');
             console.log('API客户端：获取用户信息响应', response.data);
             return response.data;
         } catch (error) {
@@ -91,7 +86,7 @@ class ApiClient {
     // 登出
     async logout() {
         try {
-            const response = await this.axios.post('/api/user/logout');
+            const response = await this.axios.post('/auth/logout');
             return response.data;
         } catch (error) {
             throw this.handleError(error);

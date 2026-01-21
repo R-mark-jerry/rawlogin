@@ -1,15 +1,21 @@
 package com.rawlogin.service.entity;
 
+import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableField;
+import com.baomidou.mybatisplus.annotation.TableId;
+import com.baomidou.mybatisplus.annotation.TableName;
 import java.time.LocalDateTime;
 
 /**
  * 用户实体类
  * 用于在服务层传递用户数据
  */
+@TableName("users")
 public class User {
     /**
      * 用户ID
      */
+    @TableId(type = IdType.AUTO)
     private Integer id;
     
     /**
@@ -30,16 +36,19 @@ public class User {
     /**
      * 真实姓名
      */
+    @TableField("real_name")
     private String realName;
     
     /**
      * 创建时间
      */
+    @TableField("create_time")
     private LocalDateTime createTime;
     
     /**
      * 最后登录时间
      */
+    @TableField("last_login_time")
     private LocalDateTime lastLoginTime;
     
     /**
