@@ -1,0 +1,22 @@
+{
+  "name": "rawlogin-frontend",
+  "version": "1.0.0",
+  "description": "前端登录应用",
+  "main": "index.js",
+  "scripts": {
+    "start": "live-server --port=3000 --host=localhost",
+    "dev": "live-server --port=3000 --host=localhost"
+  },
+  "dependencies": {
+    "axios": "^1.6.0"
+  },
+  "devDependencies": {
+    "live-server": "^1.2.2"
+  },
+  "keywords": [
+    "frontend",
+    "login"
+  ],
+  "author": "",
+  "license": "ISC"
+}
