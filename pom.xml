@@ -82,11 +82,26 @@
     </dependencies>
     
     <build>
+        <!-- 指定源代码目录 -->
+        <sourceDirectory>myfirst/main/java</sourceDirectory>
+        <!-- 指定资源文件目录 -->
+        <resources>
+            <resource>
+                <directory>myfirst/main/resources</directory>
+            </resource>
+        </resources>
+        <!-- 指定测试源代码目录 -->
+        <testSourceDirectory>myfirst/test/java</testSourceDirectory>
+        
         <plugins>
             <!-- Spring Boot Maven插件 -->
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
+                <configuration>
+                    <!-- 指定主类 -->
+                    <mainClass>com.rawlogin.RawloginApplication</mainClass>
+                </configuration>
             </plugin>
         </plugins>
     </build>

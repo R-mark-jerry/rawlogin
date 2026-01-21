@@ -63,8 +63,20 @@ public class UserRepositoryImpl implements UserRepository {
                 PreparedStatement ps = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
                 ps.setString(1, user.getUsername());
                 ps.setString(2, user.getPassword());
-                ps.setString(3, user.getEmail());
-                ps.setString(4, user.getRealName());
+                // 处理email为null或空字符串的情况
+                String email = user.getEmail();
+                if (email == null || email.trim().isEmpty()) {
+                    ps.setNull(3, java.sql.Types.VARCHAR);
+                } else {
+                    ps.setString(3, email);
+                }
+                // 处理realName为null或空字符串的情况
+                String realName = user.getRealName();
+                if (realName == null || realName.trim().isEmpty()) {
+                    ps.setNull(4, java.sql.Types.VARCHAR);
+                } else {
+                    ps.setString(4, realName);
+                }
                 ps.setTimestamp(5, Timestamp.valueOf(user.getCreateTime()));
                 ps.setInt(6, user.getStatus());
                 return ps;
