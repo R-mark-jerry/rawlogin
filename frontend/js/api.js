@@ -11,12 +11,17 @@ class ApiClient {
             headers: {
                 'Content-Type': 'application/json'
             },
-            withCredentials: true // 重要：支持跨域cookie
+            withCredentials: false // JWT认证不需要cookie
         });
         
         // 请求拦截器
         this.axios.interceptors.request.use(
             config => {
+                // 自动添加JWT令牌到请求头
+                const token = this.getToken();
+                if (token) {
+                    config.headers.Authorization = `Bearer ${token}`;
+                }
                 console.log('发送请求:', config.url);
                 return config;
             },
@@ -34,20 +39,51 @@ class ApiClient {
             },
             error => {
                 console.error('响应错误:', error.response ? error.response.data : error.message);
+                
+                // 如果是401错误，清除令牌并跳转到登录页
+                if (error.response && error.response.status === 401) {
+                    this.clearToken();
+                    if (window.app && window.app.showPage) {
+                        window.app.showPage('login');
+                        window.app.showMessage('登录已过期，请重新登录', 'error');
+                    }
+                }
+                
                 return Promise.reject(error);
             }
         );
+    }
+    
+    // 获取存储的令牌
+    getToken() {
+        return localStorage.getItem('jwtToken');
+    }
+    
+    // 存储令牌
+    setToken(token) {
+        localStorage.setItem('jwtToken', token);
+    }
+    
+    // 清除令牌
+    clearToken() {
+        localStorage.removeItem('jwtToken');
     }
     
     // 登录
     async login(username, password, remember = false) {
         try {
             console.log('API客户端：准备发送登录请求', { username, remember });
-            const response = await this.axios.post('/auth/login', {
+            const response = await this.axios.post('/api/auth/login', {
                 username: username,
                 password: password
             });
             console.log('API客户端：收到登录响应', response.data);
+            
+            // 如果登录成功，存储令牌
+            if (response.data.success && response.data.data && response.data.data.token) {
+                this.setToken(response.data.data.token);
+            }
+            
             return response.data;
         } catch (error) {
             console.error('API客户端：登录请求失败', error);
@@ -58,7 +94,7 @@ class ApiClient {
     // 注册
     async register(username, password, email = '', realName = '') {
         try {
-            const response = await this.axios.post('/auth/register', {
+            const response = await this.axios.post('/api/auth/register', {
                 username: username,
                 password: password,
                 email: email,
@@ -74,7 +110,7 @@ class ApiClient {
     async getCurrentUser() {
         try {
             console.log('API客户端：获取当前用户信息');
-            const response = await this.axios.get('/auth/current');
+            const response = await this.axios.get('/api/auth/current');
             console.log('API客户端：获取用户信息响应', response.data);
             return response.data;
         } catch (error) {
@@ -86,7 +122,89 @@ class ApiClient {
     // 登出
     async logout() {
         try {
-            const response = await this.axios.post('/auth/logout');
+            const response = await this.axios.post('/api/auth/logout');
+            // 无论API调用是否成功，都清除本地令牌
+            this.clearToken();
+            return response.data;
+        } catch (error) {
+            // 即使API调用失败，也清除本地令牌
+            this.clearToken();
+            throw this.handleError(error);
+        }
+    }
+    
+    // ===== 用户管理相关API =====
+    
+    // 获取所有用户
+    async getAllUsers() {
+        try {
+            const response = await this.axios.get('/api/users');
+            return response.data;
+        } catch (error) {
+            throw this.handleError(error);
+        }
+    }
+    
+    // 根据ID获取用户
+    async getUserById(userId) {
+        try {
+            const response = await this.axios.get(`/api/users/${userId}`);
+            return response.data;
+        } catch (error) {
+            throw this.handleError(error);
+        }
+    }
+    
+    // 添加用户
+    async addUser(userData) {
+        try {
+            const response = await this.axios.post('/api/users', userData);
+            return response.data;
+        } catch (error) {
+            throw this.handleError(error);
+        }
+    }
+    
+    // 更新用户
+    async updateUser(userId, userData) {
+        try {
+            const response = await this.axios.put(`/api/users/${userId}`, userData);
+            return response.data;
+        } catch (error) {
+            throw this.handleError(error);
+        }
+    }
+    
+    // 删除用户
+    async deleteUser(userId) {
+        try {
+            const response = await this.axios.delete(`/api/users/${userId}`);
+            return response.data;
+        } catch (error) {
+            throw this.handleError(error);
+        }
+    }
+    
+    // 批量删除用户
+    async batchDeleteUsers(userIds) {
+        try {
+            const response = await this.axios.delete('/api/users/batch', {
+                data: userIds
+            });
+            return response.data;
+        } catch (error) {
+            throw this.handleError(error);
+        }
+    }
+    
+    // 搜索用户
+    async searchUsers(keyword, role) {
+        try {
+            const params = {};
+            if (keyword) params.username = keyword; // 后端期望的参数名是username
+            if (role) params.role = role;
+            
+            const response = await this.axios.get('/api/users/search', { params });
             return response.data;
         } catch (error) {
             throw this.handleError(error);

@@ -34,11 +34,13 @@ public class SecurityConfig {
             .csrf(csrf -> csrf.disable())
             // 配置请求授权规则
             .authorizeHttpRequests(authz -> authz
-                // 允许所有请求，由我们的控制器处理认证
+                // 允许所有请求，由JWT拦截器处理认证
                 .anyRequest().permitAll()
             )
             // 禁用Spring Security的默认表单登录，使用我们自定义的登录逻辑
             .formLogin(form -> form.disable())
+            // 禁用HTTP Basic认证
+            .httpBasic(httpBasic -> httpBasic.disable())
             // 配置CORS
             .cors(cors -> cors.configurationSource(corsConfigurationSource()));
            
@@ -62,8 +64,8 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
         
-        // 允许的源
-        configuration.setAllowedOrigins(Arrays.asList("http://localhost:3000", "http://127.0.0.1:5500", "http://localhost:5500"));
+        // 允许所有源
+        configuration.setAllowedOriginPatterns(Arrays.asList("*"));
         
         // 允许的HTTP方法
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
@@ -71,15 +73,15 @@ public class SecurityConfig {
         // 允许的请求头
         configuration.setAllowedHeaders(Arrays.asList("*"));
         
-        // 允许发送Cookie
-        configuration.setAllowCredentials(true);
+        // 不允许发送Cookie，避免跨域问题
+        configuration.setAllowCredentials(false);
         
         // 预检请求的缓存时间
         configuration.setMaxAge(3600L);
         
         // 应用配置
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/auth/**", configuration);
+        source.registerCorsConfiguration("/**", configuration);
         
         return source;
     }

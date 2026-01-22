@@ -56,6 +56,11 @@ public class User {
      */
     private Integer status;
     
+    /**
+     * 用户角色
+     */
+    private String role;
+    
     // 默认构造方法
     public User() {}
     
@@ -131,6 +136,14 @@ public class User {
     
     public void setStatus(Integer status) {
         this.status = status;
+    }
+    
+    public String getRole() {
+        return role;
+    }
+    
+    public void setRole(String role) {
+        this.role = role;
     }
     
     @Override

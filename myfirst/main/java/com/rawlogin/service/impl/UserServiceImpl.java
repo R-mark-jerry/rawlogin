@@ -12,6 +12,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 /**
  * 用户服务实现类
@@ -193,6 +194,141 @@ public class UserServiceImpl implements UserService {
             }
         } catch (Exception e) {
             logger.error("更新用户最后登录时间时发生异常: {}", userId, e);
+            return Result.error("系统错误，请稍后再试");
+        }
+    }
+    @Override
+    public Result<List<User>> findAllUsers() {
+        try {
+            List<User> users = userMapper.selectList(null);
+            return Result.success("获取用户列表成功", users);
+        } catch (Exception e) {
+            logger.error("获取用户列表时发生异常", e);
+            return Result.error("系统错误，请稍后再试");
+        }
+    }
+
+    @Override
+    public Result<User> updateUser(User user) {
+        try {
+            // 参数验证
+            if (user.getId() == null) {
+                return Result.error("用户ID不能为空");
+            }
+            
+            if (user.getUsername() == null || user.getUsername().trim().isEmpty()) {
+                return Result.error("用户名不能为空");
+            }
+            
+            // 检查用户名是否已存在（排除当前用户）
+            QueryWrapper<User> queryWrapper = new QueryWrapper<>();
+            queryWrapper.eq("username", user.getUsername())
+                      .ne("id", user.getId());
+            User existUser = userMapper.selectOne(queryWrapper);
+            if (existUser != null) {
+                return Result.error("用户名已存在");
+            }
+            
+            // 如果密码不为空，则加密密码
+            if (user.getPassword() != null && !user.getPassword().trim().isEmpty()) {
+                String encodedPassword = passwordEncoder.encode(user.getPassword());
+                user.setPassword(encodedPassword);
+            } else {
+                // 如果密码为空，保持原密码不变
+                User existingUser = userMapper.selectById(user.getId());
+                if (existingUser != null) {
+                    user.setPassword(existingUser.getPassword());
+                }
+            }
+            
+            // 更新用户
+            int result = userMapper.updateById(user);
+            if (result <= 0) {
+                return Result.error("更新失败，请稍后再试");
+            }
+            
+            // 清除密码信息，不返回给前端
+            user.setPassword(null);
+            
+            logger.info("用户更新成功: {}", user.getUsername());
+            return Result.success("更新成功", user);
+        } catch (Exception e) {
+            logger.error("更新用户时发生异常", e);
+            return Result.error("系统错误，请稍后再试");
+        }
+    }
+
+    @Override
+    public Result<Void> deleteUser(Integer id) {
+        try {
+            // 检查用户是否存在
+            User user = userMapper.selectById(id);
+            if (user == null) {
+                return Result.error("用户不存在");
+            }
+            
+            // 删除用户
+            int result = userMapper.deleteById(id);
+            if (result <= 0) {
+                return Result.error("删除失败，请稍后再试");
+            }
+            
+            logger.info("用户删除成功: {}", user.getUsername());
+            return Result.success("删除成功");
+        } catch (Exception e) {
+            logger.error("删除用户时发生异常", e);
+            return Result.error("系统错误，请稍后再试");
+        }
+    }
+
+    @Override
+    public Result<Void> batchDeleteUsers(List<Integer> ids) {
+        try {
+            if (ids == null || ids.isEmpty()) {
+                return Result.error("用户ID列表不能为空");
+            }
+            
+            // 批量删除用户
+            int result = userMapper.deleteBatchIds(ids);
+            if (result == 0) {
+                return Result.error("删除失败，请稍后再试");
+            }
+            
+            logger.info("批量删除用户成功，删除数量: {}", result);
+            return Result.success("删除成功");
+        } catch (Exception e) {
+            logger.error("批量删除用户时发生异常", e);
+            return Result.error("系统错误，请稍后再试");
+        }
+    }
+
+    @Override
+    public Result<List<User>> findUsersByCondition(String username, String email, Integer status) {
+        try {
+            QueryWrapper<User> queryWrapper = new QueryWrapper<>();
+            
+            // 根据用户名查询
+            if (username != null && !username.trim().isEmpty()) {
+                queryWrapper.like("username", username);
+            }
+            
+            // 根据邮箱查询
+            if (email != null && !email.trim().isEmpty()) {
+                queryWrapper.like("email", email);
+            }
+            
+            // 根据状态查询
+            if (status != null) {
+                queryWrapper.eq("status", status);
+            }
+            
+            // 按ID降序排列
+            queryWrapper.orderByDesc("id");
+            
+            List<User> users = userMapper.selectList(queryWrapper);
+            return Result.success("查询成功", users);
+        } catch (Exception e) {
+            logger.error("根据条件查询用户时发生异常", e);
             return Result.error("系统错误，请稍后再试");
         }
     }

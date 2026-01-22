@@ -135,10 +135,115 @@
                     </div>
                     
                     <div class="action-buttons">
+                        <button class="action-btn" id="userManagementBtn">用户管理</button>
                         <button class="action-btn">修改密码</button>
                         <button class="action-btn">个人信息</button>
                         <button class="action-btn secondary">系统设置</button>
                     </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 用户管理页面 -->
+        <div id="userManagementPage" class="page" style="display: none;">
+            <div class="navbar">
+                <h1>用户管理系统</h1>
+                <div class="user-info">
+                    <span>欢迎, <span id="mgmtDisplayUsername">用户名</span></span>
+                    <button id="mgmtLogoutButton" class="logout-btn">退出登录</button>
+                </div>
+            </div>
+            
+            <div class="user-management-container">
+                <div class="management-header">
+                    <h2>用户管理</h2>
+                    <button id="addUserBtn" class="add-user-btn">添加用户</button>
+                </div>
+                
+                <!-- 搜索栏 -->
+                <div class="search-bar">
+                    <input type="text" id="searchKeyword" placeholder="用户名">
+                    <select id="searchRole">
+                        <option value="">全部角色</option>
+                        <option value="USER">普通用户</option>
+                        <option value="ADMIN">管理员</option>
+                    </select>
+                    <button id="searchBtn" class="search-btn">搜索</button>
+                    <button id="resetSearchBtn" class="reset-btn">重置</button>
+                </div>
+                
+                <!-- 用户列表 -->
+                <div class="user-table-container">
+                    <table class="user-table" id="userTable">
+                        <thead>
+                            <tr>
+                                <th><input type="checkbox" id="selectAll"></th>
+                                <th>用户名</th>
+                                <th>真实姓名</th>
+                                <th>邮箱</th>
+                                <th>角色</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- 用户数据将通过JavaScript动态加载 -->
+                        </tbody>
+                    </table>
+                </div>
+                
+                <!-- 批量操作 -->
+                <div class="batch-operations">
+                    <button id="batchDeleteBtn" class="batch-delete-btn" disabled>批量删除</button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 添加/编辑用户模态框 -->
+        <div id="userModal" class="modal" style="display: none;">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3 id="userModalTitle">添加用户</h3>
+                    <span class="close">&times;</span>
+                </div>
+                <div class="modal-body">
+                    <form id="userForm">
+                        <input type="hidden" id="userId">
+                        <div class="form-group">
+                            <label for="userUsername">用户名</label>
+                            <input type="text" id="userUsername" name="username" required>
+                            <div class="info">用户名长度必须在3-50个字符之间</div>
+                            <div id="userUsernameError" class="field-error">用户名不能为空</div>
+                        </div>
+                        
+                        <div class="form-group" id="userPasswordGroup">
+                            <label for="userPassword">密码</label>
+                            <input type="password" id="userPassword" name="password">
+                            <div class="info">编辑时留空表示不修改密码，新增时密码长度不能少于6位</div>
+                            <div id="userPasswordError" class="field-error">密码不能为空</div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="userEmail">邮箱</label>
+                            <input type="email" id="userEmail" name="email">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="userRealName">真实姓名</label>
+                            <input type="text" id="userRealName" name="realName">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="userRole">角色</label>
+                            <select id="userRole" name="role">
+                                <option value="USER">普通用户</option>
+                                <option value="ADMIN">管理员</option>
+                            </select>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button id="saveUserBtn" class="save-btn">保存</button>
+                    <button id="cancelUserBtn" class="cancel-btn">取消</button>
                 </div>
             </div>
         </div>
