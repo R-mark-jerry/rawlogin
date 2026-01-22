@@ -456,12 +456,17 @@ class App {
         // 清空表格
         tbody.innerHTML = '';
         
+        // 更新表格信息
+        const tableInfo = document.getElementById('tableInfo');
+        if (tableInfo) {
+            tableInfo.textContent = `共 ${users ? users.length : 0} 个用户`;
+        }
+        
         if (!users || users.length === 0) {
             const row = tbody.insertRow();
             const cell = row.insertCell(0);
             cell.colSpan = 6;
-            cell.textContent = '暂无用户数据';
-            cell.style.textAlign = 'center';
+            cell.innerHTML = '<div style="text-align: center; padding: 20px; color: #6c757d;">📭 暂无用户数据</div>';
             return;
         }
         
@@ -475,6 +480,7 @@ class App {
             checkbox.type = 'checkbox';
             checkbox.className = 'user-checkbox';
             checkbox.value = user.id;
+            checkbox.addEventListener('change', () => this.updateBatchDeleteButton());
             checkboxCell.appendChild(checkbox);
             
             // 用户名
@@ -497,12 +503,12 @@ class App {
             const actionCell = row.insertCell(5);
             const editBtn = document.createElement('button');
             editBtn.className = 'btn-edit';
-            editBtn.textContent = '编辑';
+            editBtn.textContent = '✏️ 编辑';
             editBtn.onclick = () => this.editUser(user);
             
             const deleteBtn = document.createElement('button');
             deleteBtn.className = 'btn-delete';
-            deleteBtn.textContent = '删除';
+            deleteBtn.textContent = '🗑️ 删除';
             deleteBtn.onclick = () => this.deleteUser(user.id);
             
             actionCell.appendChild(editBtn);

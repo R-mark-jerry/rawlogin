@@ -156,44 +156,73 @@
             
             <div class="user-management-container">
                 <div class="management-header">
-                    <h2>用户管理</h2>
-                    <button id="addUserBtn" class="add-user-btn">添加用户</button>
+                    <div>
+                        <h2>用户管理</h2>
+                        <p class="management-subtitle">管理系统中的所有用户账户</p>
+                    </div>
+                    <button id="addUserBtn" class="add-user-btn">
+                        <span>➕ 添加用户</span>
+                    </button>
                 </div>
                 
                 <!-- 搜索栏 -->
-                <div class="search-bar">
-                    <input type="text" id="searchKeyword" placeholder="用户名">
-                    <select id="searchRole">
-                        <option value="">全部角色</option>
-                        <option value="USER">普通用户</option>
-                        <option value="ADMIN">管理员</option>
-                    </select>
-                    <button id="searchBtn" class="search-btn">搜索</button>
-                    <button id="resetSearchBtn" class="reset-btn">重置</button>
+                <div class="search-section">
+                    <h3>搜索用户</h3>
+                    <div class="search-bar">
+                        <div class="search-input-group">
+                            <input type="text" id="searchKeyword" placeholder="输入用户名搜索...">
+                            <select id="searchRole">
+                                <option value="">全部角色</option>
+                                <option value="USER">普通用户</option>
+                                <option value="ADMIN">管理员</option>
+                            </select>
+                        </div>
+                        <div class="search-button-group">
+                            <button id="searchBtn" class="search-btn">
+                                <span>🔍 搜索</span>
+                            </button>
+                            <button id="resetSearchBtn" class="reset-btn">
+                                <span>🔄 重置</span>
+                            </button>
+                        </div>
+                    </div>
                 </div>
                 
                 <!-- 用户列表 -->
-                <div class="user-table-container">
-                    <table class="user-table" id="userTable">
-                        <thead>
-                            <tr>
-                                <th><input type="checkbox" id="selectAll"></th>
-                                <th>用户名</th>
-                                <th>真实姓名</th>
-                                <th>邮箱</th>
-                                <th>角色</th>
-                                <th>操作</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <!-- 用户数据将通过JavaScript动态加载 -->
-                        </tbody>
-                    </table>
+                <div class="table-section">
+                    <div class="table-header">
+                        <h3>用户列表</h3>
+                        <span class="table-info" id="tableInfo">共 0 个用户</span>
+                    </div>
+                    <div class="user-table-container">
+                        <table class="user-table" id="userTable">
+                            <thead>
+                                <tr>
+                                    <th style="width: 50px;"><input type="checkbox" id="selectAll"></th>
+                                    <th style="width: 150px;">用户名</th>
+                                    <th style="width: 120px;">真实姓名</th>
+                                    <th style="width: 200px;">邮箱</th>
+                                    <th style="width: 100px;">角色</th>
+                                    <th style="width: 150px;">操作</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- 用户数据将通过JavaScript动态加载 -->
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
                 
                 <!-- 批量操作 -->
                 <div class="batch-operations">
-                    <button id="batchDeleteBtn" class="batch-delete-btn" disabled>批量删除</button>
+                    <div class="batch-info">
+                        <span id="selectedCount">已选择 0 项</span>
+                    </div>
+                    <div class="batch-actions">
+                        <button id="batchDeleteBtn" class="batch-delete-btn" disabled>
+                            <span>🗑️ 批量删除</span>
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -209,14 +238,14 @@
                     <form id="userForm">
                         <input type="hidden" id="userId">
                         <div class="form-group">
-                            <label for="userUsername">用户名</label>
+                            <label for="userUsername">用户名 *</label>
                             <input type="text" id="userUsername" name="username" required>
                             <div class="info">用户名长度必须在3-50个字符之间</div>
                             <div id="userUsernameError" class="field-error">用户名不能为空</div>
                         </div>
                         
                         <div class="form-group" id="userPasswordGroup">
-                            <label for="userPassword">密码</label>
+                            <label for="userPassword">密码 *</label>
                             <input type="password" id="userPassword" name="password">
                             <div class="info">编辑时留空表示不修改密码，新增时密码长度不能少于6位</div>
                             <div id="userPasswordError" class="field-error">密码不能为空</div>
@@ -224,16 +253,16 @@
                         
                         <div class="form-group">
                             <label for="userEmail">邮箱</label>
-                            <input type="email" id="userEmail" name="email">
+                            <input type="email" id="userEmail" name="email" placeholder="example@domain.com">
                         </div>
                         
                         <div class="form-group">
                             <label for="userRealName">真实姓名</label>
-                            <input type="text" id="userRealName" name="realName">
+                            <input type="text" id="userRealName" name="realName" placeholder="请输入真实姓名">
                         </div>
                         
                         <div class="form-group">
-                            <label for="userRole">角色</label>
+                            <label for="userRole">用户角色</label>
                             <select id="userRole" name="role">
                                 <option value="USER">普通用户</option>
                                 <option value="ADMIN">管理员</option>
@@ -242,8 +271,8 @@
                     </form>
                 </div>
                 <div class="modal-footer">
-                    <button id="saveUserBtn" class="save-btn">保存</button>
-                    <button id="cancelUserBtn" class="cancel-btn">取消</button>
+                    <button id="saveUserBtn" class="save-btn">💾 保存</button>
+                    <button id="cancelUserBtn" class="cancel-btn">❌ 取消</button>
                 </div>
             </div>
         </div>
