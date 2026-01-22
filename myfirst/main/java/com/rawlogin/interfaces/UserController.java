@@ -1,8 +1,9 @@
-package com.rawlogin.api;
+package com.rawlogin.interfaces;
 
+import com.rawlogin.application.UserApplicationService;
+import com.rawlogin.domain.model.User;
+import com.rawlogin.domain.service.UserDomainService;
 import com.rawlogin.common.Result;
-import com.rawlogin.service.UserService;
-import com.rawlogin.service.entity.User;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,8 +13,8 @@ import javax.servlet.http.HttpServletRequest;
 import java.util.List;
 
 /**
- * 用户管理控制器
- * 处理用户增删改查相关请求
+ * 用户管理接口控制器
+ * 处理用户增删改查功能的接口层
  */
 @RestController
 @RequestMapping("/api/users")
@@ -22,53 +23,96 @@ public class UserController {
     private static final Logger logger = LoggerFactory.getLogger(UserController.class);
     
     @Autowired
-    private UserService userService;
+    private UserApplicationService userApplicationService;
+    
+    @Autowired
+    private UserDomainService userDomainService;
     
     /**
-     * 获取所有用户列表
+     * 获取所有用户列表接口
      * @return 用户列表
      */
     @GetMapping
-    public Result<List<User>> getAllUsers() {
+    public Result<List<User>> getAllUsers(HttpServletRequest request) {
         logger.info("获取所有用户列表");
-        return userService.findAllUsers();
+        
+        // 从请求属性中获取当前用户信息（由JWT拦截器设置）
+        String currentRole = (String) request.getAttribute("role");
+        
+        // 检查权限：只有管理员可以获取所有用户列表
+        if (!"ADMIN".equals(currentRole)) {
+            return Result.error("权限不足，只有管理员可以获取用户列表");
+        }
+        
+        return userApplicationService.getAllUsers();
     }
     
     /**
-     * 根据ID获取用户信息
+     * 根据ID获取用户信息接口
      * @param id 用户ID
      * @return 用户信息
      */
     @GetMapping("/{id}")
-    public Result<User> getUserById(@PathVariable Integer id) {
+    public Result<User> getUserById(@PathVariable Integer id, HttpServletRequest request) {
         logger.info("根据ID获取用户信息: {}", id);
-        return userService.findById(id);
+        
+        // 从请求属性中获取当前用户信息（由JWT拦截器设置）
+        String currentRole = (String) request.getAttribute("role");
+        Integer currentUserId = (Integer) request.getAttribute("userId");
+        
+        // 检查权限：只有管理员可以查看其他用户详情
+        if (!"ADMIN".equals(currentRole) && !currentUserId.equals(id)) {
+            return Result.error("权限不足，只有管理员可以查看其他用户信息");
+        }
+        
+        return userApplicationService.getUserById(id);
     }
     
     /**
-     * 根据条件查询用户
+     * 根据条件查询用户接口
      * @param username 用户名（可选）
      * @param email 邮箱（可选）
      * @param status 用户状态（可选）
+     * @param role 用户角色（可选）
      * @return 查询结果
      */
     @GetMapping("/search")
     public Result<List<User>> searchUsers(
             @RequestParam(required = false) String username,
             @RequestParam(required = false) String email,
-            @RequestParam(required = false) Integer status) {
-        logger.info("根据条件查询用户: username={}, email={}, status={}", username, email, status);
-        return userService.findUsersByCondition(username, email, status);
+            @RequestParam(required = false) Integer status,
+            @RequestParam(required = false) String role,
+            HttpServletRequest request) {
+        logger.info("根据条件查询用户: username={}, email={}, status={}, role={}", username, email, status, role);
+        
+        // 从请求属性中获取当前用户信息（由JWT拦截器设置）
+        String currentRole = (String) request.getAttribute("role");
+        
+        // 检查权限：只有管理员可以查询用户列表
+        if (!"ADMIN".equals(currentRole)) {
+            return Result.error("权限不足，只有管理员可以查询用户列表");
+        }
+        
+        return userApplicationService.searchUsers(username, email, status, role);
     }
     
     /**
-     * 创建新用户
+     * 创建新用户接口
      * @param userCreateRequest 用户创建请求
+     * @param request HTTP请求
      * @return 创建结果
      */
     @PostMapping
-    public Result<User> createUser(@RequestBody UserCreateRequest userCreateRequest) {
+    public Result<User> createUser(@RequestBody UserCreateRequest userCreateRequest, HttpServletRequest request) {
         logger.info("创建新用户: {}", userCreateRequest.getUsername());
+        
+        // 从请求属性中获取当前用户信息（由JWT拦截器设置）
+        String currentRole = (String) request.getAttribute("role");
+        
+        // 检查权限：只有管理员可以创建用户
+        if (!"ADMIN".equals(currentRole)) {
+            return Result.error("权限不足，只有管理员可以创建用户");
+        }
         
         // 创建用户对象
         User user = new User();
@@ -79,12 +123,12 @@ public class UserController {
         user.setStatus(userCreateRequest.getStatus() != null ? userCreateRequest.getStatus() : 1);
         user.setRole(userCreateRequest.getRole() != null ? userCreateRequest.getRole() : "USER");
         
-        // 调用服务层
-        return userService.register(user);
+        // 调用应用服务层
+        return userApplicationService.register(user);
     }
     
     /**
-     * 更新用户信息
+     * 更新用户信息接口
      * @param id 用户ID
      * @param userUpdateRequest 用户更新请求
      * @param request HTTP请求
@@ -100,22 +144,16 @@ public class UserController {
         String currentRole = (String) request.getAttribute("role");
         Integer currentUserId = (Integer) request.getAttribute("userId");
         
-        // 检查权限
-        if (!"ADMIN".equals(currentRole)) {
-            return Result.error(com.rawlogin.common.ResultCode.FORBIDDEN, "权限不足，只有管理员可以操作用户");
+        // 检查权限：只有管理员可以修改其他用户信息
+        if (!"ADMIN".equals(currentRole) && !currentUserId.equals(id)) {
+            return Result.error("权限不足，只有管理员可以修改其他用户信息");
         }
         
-        // 防止用户修改自己的角色
-        if (currentUserId.equals(id)) {
-            return Result.error(com.rawlogin.common.ResultCode.BAD_REQUEST, "不能修改自己的账户");
+        // 防止普通用户修改自己的角色
+        if (!"ADMIN".equals(currentRole) && userUpdateRequest.getRole() != null && 
+            !userUpdateRequest.getRole().equals("USER")) {
+            return Result.error("普通用户不能修改自己的角色");
         }
-        
-        // 获取现有用户信息
-        Result<User> existingUserResult = userService.findById(id);
-        if (!existingUserResult.isSuccess()) {
-            return existingUserResult;
-        }
-        User existingUser = existingUserResult.getData();
         
         // 创建用户对象
         User user = new User();
@@ -125,19 +163,18 @@ public class UserController {
         user.setEmail(userUpdateRequest.getEmail());
         user.setRealName(userUpdateRequest.getRealName());
         user.setStatus(userUpdateRequest.getStatus());
+        
         // 只有管理员可以修改角色
         if ("ADMIN".equals(currentRole)) {
             user.setRole(userUpdateRequest.getRole());
-        } else {
-            user.setRole(existingUser.getRole());
         }
         
-        // 调用服务层
-        return userService.updateUser(user);
+        // 调用应用服务层
+        return userApplicationService.updateUser(user);
     }
     
     /**
-     * 删除用户
+     * 删除用户接口
      * @param id 用户ID
      * @param request HTTP请求
      * @return 删除结果
@@ -150,22 +187,22 @@ public class UserController {
         String currentRole = (String) request.getAttribute("role");
         Integer currentUserId = (Integer) request.getAttribute("userId");
         
-        // 检查权限
+        // 检查权限：只有管理员可以删除用户
         if (!"ADMIN".equals(currentRole)) {
-            return Result.error(com.rawlogin.common.ResultCode.FORBIDDEN, "权限不足，只有管理员可以操作用户");
+            return Result.error("权限不足，只有管理员可以删除用户");
         }
         
         // 防止用户删除自己
         if (currentUserId.equals(id)) {
-            return Result.error(com.rawlogin.common.ResultCode.BAD_REQUEST, "不能删除自己的账户");
+            return Result.error("不能删除自己的账户");
         }
         
-        // 调用服务层
-        return userService.deleteUser(id);
+        // 调用应用服务层
+        return userApplicationService.deleteUser(id);
     }
     
     /**
-     * 批量删除用户
+     * 批量删除用户接口
      * @param userIds 用户ID列表
      * @param request HTTP请求
      * @return 删除结果
@@ -178,18 +215,18 @@ public class UserController {
         String currentRole = (String) request.getAttribute("role");
         Integer currentUserId = (Integer) request.getAttribute("userId");
         
-        // 检查权限
+        // 检查权限：只有管理员可以批量删除用户
         if (!"ADMIN".equals(currentRole)) {
-            return Result.error(com.rawlogin.common.ResultCode.FORBIDDEN, "权限不足，只有管理员可以操作用户");
+            return Result.error("权限不足，只有管理员可以批量删除用户");
         }
         
         // 防止用户删除自己
         if (userIds.contains(currentUserId)) {
-            return Result.error(com.rawlogin.common.ResultCode.BAD_REQUEST, "不能删除自己的账户");
+            return Result.error("不能删除自己的账户");
         }
         
-        // 调用服务层
-        return userService.batchDeleteUsers(userIds);
+        // 调用应用服务层
+        return userApplicationService.batchDeleteUsers(userIds);
     }
     
     /**

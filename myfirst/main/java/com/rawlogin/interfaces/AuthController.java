@@ -1,9 +1,9 @@
-package com.rawlogin.api;
+package com.rawlogin.interfaces;
 
-import com.rawlogin.common.Result;
-import com.rawlogin.service.UserService;
-import com.rawlogin.service.entity.User;
+import com.rawlogin.application.UserApplicationService;
+import com.rawlogin.domain.model.User;
 import com.rawlogin.util.JwtUtil;
+import com.rawlogin.common.Result;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,8 +15,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * 认证控制器 - 前后端分离版本
- * 只处理登录和注册功能
+ * 认证接口控制器
+ * 处理登录和注册功能的接口层
  */
 @RestController
 @RequestMapping("/api/auth")
@@ -25,13 +25,13 @@ public class AuthController {
     private static final Logger logger = LoggerFactory.getLogger(AuthController.class);
     
     @Autowired
-    private UserService userService;
+    private UserApplicationService userApplicationService;
     
     @Autowired
     private JwtUtil jwtUtil;
     
     /**
-     * 用户登录
+     * 用户登录接口
      * @param loginRequest 登录请求
      * @return 登录结果
      */
@@ -39,16 +39,13 @@ public class AuthController {
     public ResponseEntity<Result<Map<String, Object>>> login(@RequestBody LoginRequest loginRequest) {
         logger.info("用户登录尝试: {}", loginRequest.getUsername());
         
-        // 调用服务层
-        Result<User> result = userService.login(loginRequest.getUsername(), loginRequest.getPassword());
+        // 调用应用服务层
+        Result<User> result = userApplicationService.login(loginRequest.getUsername(), loginRequest.getPassword());
         
         if (result.isSuccess()) {
             // 登录成功，生成JWT令牌
             User user = result.getData();
             String token = jwtUtil.generateToken(user.getUsername(), user.getId(), user.getRole());
-            
-            // 清除密码信息，不返回给前端
-            user.setPassword(null);
             
             // 构建返回数据
             Map<String, Object> data = new HashMap<>();
@@ -65,7 +62,7 @@ public class AuthController {
     }
     
     /**
-     * 用户注册
+     * 用户注册接口
      * @param registerRequest 注册请求
      * @return 注册结果
      */
@@ -80,8 +77,8 @@ public class AuthController {
         user.setEmail(registerRequest.getEmail());
         user.setRealName(registerRequest.getRealName());
         
-        // 调用服务层
-        Result<User> result = userService.register(user);
+        // 调用应用服务层
+        Result<User> result = userApplicationService.register(user);
         
         if (result.isSuccess()) {
             logger.info("用户注册成功: {}", registerRequest.getUsername());
@@ -93,7 +90,7 @@ public class AuthController {
     }
     
     /**
-     * 获取当前用户信息
+     * 获取当前用户信息接口
      * @param request HTTP请求
      * @return 用户信息
      */
@@ -101,17 +98,13 @@ public class AuthController {
     public ResponseEntity<Result<User>> getCurrentUser(HttpServletRequest request) {
         try {
             // 从请求属性中获取用户信息（由JWT拦截器设置）
-            String username = (String) request.getAttribute("username");
             Integer userId = (Integer) request.getAttribute("userId");
-            String role = (String) request.getAttribute("role");
             
-            if (username != null) {
+            if (userId != null) {
                 // 获取完整用户信息
-                Result<User> userResult = userService.findById(userId);
+                Result<User> userResult = userApplicationService.getCurrentUser(userId);
                 if (userResult.isSuccess()) {
-                    User user = userResult.getData();
-                    user.setPassword(null); // 清除密码信息
-                    return ResponseEntity.ok(Result.success("获取用户信息成功", user));
+                    return ResponseEntity.ok(Result.success("获取用户信息成功", userResult.getData()));
                 }
             }
             
@@ -123,7 +116,7 @@ public class AuthController {
     }
     
     /**
-     * 用户登出
+     * 用户登出接口
      * @param request HTTP请求
      * @return 登出结果
      */
