@@ -176,6 +176,16 @@ class App {
                 document.getElementById('displayLastLoginTime').textContent = new Date(this.currentUser.lastLoginTime).toLocaleString();
             }
             
+            // 根据用户角色显示或隐藏用户管理按钮
+            const userManagementBtn = document.getElementById('userManagementBtn');
+            if (userManagementBtn) {
+                if (this.currentUser.role === 'ADMIN') {
+                    userManagementBtn.style.display = 'inline-block';
+                } else {
+                    userManagementBtn.style.display = 'none';
+                }
+            }
+            
             console.log('准备显示欢迎页面');
             this.showPage('welcome');
         } else {
@@ -421,10 +431,16 @@ class App {
                 this.showPage('login');
                 return;
             }
-            
+           
+            // 检查用户是否为管理员
+            if (this.currentUser.role !== 'ADMIN') {
+                this.showMessage('权限不足，只有管理员可以访问用户管理', 'error');
+                return;
+            }
+           
             // 显示用户管理页面
             this.showPage('userManagement');
-            
+           
             // 加载用户列表
             await this.loadUsers();
         } catch (error) {

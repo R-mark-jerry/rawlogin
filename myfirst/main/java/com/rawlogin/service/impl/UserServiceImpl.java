@@ -121,6 +121,7 @@ public class UserServiceImpl implements UserService {
             // 设置默认值
             user.setCreateTime(LocalDateTime.now());
             user.setStatus(1); // 默认状态为启用
+            user.setRole("USER"); // 默认角色为普通用户
             
             // 处理email和realName为空字符串的情况，转换为null
             if (user.getEmail() != null && user.getEmail().trim().isEmpty()) {
