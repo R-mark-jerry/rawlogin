@@ -88,7 +88,6 @@
         </dependency>
         
         <!-- JWT依赖 -->
-        <!-- 暂时注释掉，稍后解决依赖问题
         <dependency>
             <groupId>io.jsonwebtoken</groupId>
             <artifactId>jjwt-api</artifactId>
@@ -106,7 +105,25 @@
             <version>0.11.5</version>
             <scope>runtime</scope>
         </dependency>
-        -->
+        
+        <!-- Spring Security AOP支持（用于@PreAuthorize注解） -->
+        <dependency>
+            <groupId>org.springframework.security</groupId>
+            <artifactId>spring-security-config</artifactId>
+        </dependency>
+        
+        <!-- AOP支持 -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-aop</artifactId>
+        </dependency>
+        
+        <!-- Lombok -->
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <optional>true</optional>
+        </dependency>
     </dependencies>
     
     <build>

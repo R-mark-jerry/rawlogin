@@ -1,9 +1,13 @@
 package com.rawlogin.interfaces;
 
 import com.rawlogin.application.UserApplicationService;
+import com.rawlogin.application.dto.UserDTO;
+import com.rawlogin.interfaces.vo.UserVO;
 import com.rawlogin.domain.model.User;
 import com.rawlogin.util.JwtUtil;
+import com.rawlogin.application.converter.UserConverter;
 import com.rawlogin.common.Result;
+import com.rawlogin.config.annotation.PreAuthorize;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -40,19 +44,22 @@ public class AuthController {
         logger.info("用户登录尝试: {}", loginRequest.getUsername());
         
         // 调用应用服务层
-        Result<User> result = userApplicationService.login(loginRequest.getUsername(), loginRequest.getPassword());
+        Result<UserDTO> result = userApplicationService.login(loginRequest.getUsername(), loginRequest.getPassword());
         
         if (result.isSuccess()) {
             // 登录成功，生成JWT令牌
-            User user = result.getData();
-            String token = jwtUtil.generateToken(user.getUsername(), user.getId(), user.getRole());
+            UserDTO userDTO = result.getData();
+            String token = jwtUtil.generateToken(userDTO.getUsername(), userDTO.getId(), userDTO.getRole());
+            
+            // 转换为VO
+            UserVO userVO = UserConverter.toVO(userDTO);
             
             // 构建返回数据
             Map<String, Object> data = new HashMap<>();
             data.put("token", token);
-            data.put("user", user);
+            data.put("user", userVO);
             
-            logger.info("用户登录成功: {}", user.getUsername());
+            logger.info("用户登录成功: {}", userDTO.getUsername());
             return ResponseEntity.ok(Result.success("登录成功", data));
         } else {
             // 登录失败
@@ -67,7 +74,7 @@ public class AuthController {
      * @return 注册结果
      */
     @PostMapping("/register")
-    public ResponseEntity<Result<User>> register(@RequestBody RegisterRequest registerRequest) {
+    public ResponseEntity<Result<UserVO>> register(@RequestBody RegisterRequest registerRequest) {
         logger.info("用户注册尝试: {}", registerRequest.getUsername());
         
         // 创建用户对象
@@ -75,14 +82,16 @@ public class AuthController {
         user.setUsername(registerRequest.getUsername());
         user.setPassword(registerRequest.getPassword());
         user.setEmail(registerRequest.getEmail());
-        user.setRealName(registerRequest.getRealName());
         
         // 调用应用服务层
-        Result<User> result = userApplicationService.register(user);
+        Result<UserDTO> result = userApplicationService.register(user);
         
         if (result.isSuccess()) {
+            // 转换为VO
+            UserVO userVO = UserConverter.toVO(result.getData());
+            
             logger.info("用户注册成功: {}", registerRequest.getUsername());
-            return ResponseEntity.ok(Result.success("注册成功", result.getData()));
+            return ResponseEntity.ok(Result.success("注册成功", userVO));
         } else {
             logger.warn("用户注册失败: {} - {}", registerRequest.getUsername(), result.getMessage());
             return ResponseEntity.status(400).body(Result.error(result.getMessage()));
@@ -95,16 +104,19 @@ public class AuthController {
      * @return 用户信息
      */
     @GetMapping("/current")
-    public ResponseEntity<Result<User>> getCurrentUser(HttpServletRequest request) {
+    @PreAuthorize(authenticated = true)
+    public ResponseEntity<Result<UserVO>> getCurrentUser(HttpServletRequest request) {
         try {
             // 从请求属性中获取用户信息（由JWT拦截器设置）
             Integer userId = (Integer) request.getAttribute("userId");
             
             if (userId != null) {
                 // 获取完整用户信息
-                Result<User> userResult = userApplicationService.getCurrentUser(userId);
+                Result<UserDTO> userResult = userApplicationService.getCurrentUser(userId);
                 if (userResult.isSuccess()) {
-                    return ResponseEntity.ok(Result.success("获取用户信息成功", userResult.getData()));
+                    // 转换为VO
+                    UserVO userVO = UserConverter.toVO(userResult.getData());
+                    return ResponseEntity.ok(Result.success("获取用户信息成功", userVO));
                 }
             }
             
@@ -121,6 +133,7 @@ public class AuthController {
      * @return 登出结果
      */
     @PostMapping("/logout")
+    @PreAuthorize(authenticated = true)
     public ResponseEntity<Result<Void>> logout(HttpServletRequest request) {
         try {
             // 从请求头中获取令牌
@@ -180,7 +193,6 @@ public class AuthController {
         private String username;
         private String password;
         private String email;
-        private String realName;
         
         public String getUsername() {
             return username;
@@ -204,14 +216,6 @@ public class AuthController {
         
         public void setEmail(String email) {
             this.email = email;
-        }
-        
-        public String getRealName() {
-            return realName;
-        }
-        
-        public void setRealName(String realName) {
-            this.realName = realName;
         }
     }
 }

@@ -1,6 +1,6 @@
 package com.rawlogin.infrastructure.persistence;
 
-import com.rawlogin.domain.model.User;
+import com.rawlogin.infrastructure.po.UserPO;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
@@ -11,10 +11,10 @@ import java.util.List;
 
 /**
  * 用户持久化映射器
- * 桥接领域模型和数据库操作
+ * 桥接数据库持久化对象和数据库操作
  */
 @Mapper
-public interface UserMapper extends BaseMapper<User> {
+public interface UserMapper extends BaseMapper<UserPO> {
     
     /**
      * 根据用户名查找用户
@@ -22,7 +22,7 @@ public interface UserMapper extends BaseMapper<User> {
      * @return 用户对象
      */
     @Select("SELECT * FROM users WHERE username = #{username}")
-    User selectByUsername(@Param("username") String username);
+    UserPO selectByUsername(@Param("username") String username);
     
     /**
      * 检查用户名是否存在
@@ -73,7 +73,7 @@ public interface UserMapper extends BaseMapper<User> {
             "</if>" +
             "ORDER BY id DESC" +
             "</script>")
-    List<User> selectByCondition(
+    List<UserPO> selectByCondition(
             @Param("username") String username,
             @Param("email") String email,
             @Param("status") Integer status,

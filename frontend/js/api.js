@@ -92,13 +92,12 @@ class ApiClient {
     }
     
     // 注册
-    async register(username, password, email = '', realName = '') {
+    async register(username, password, email = '') {
         try {
             const response = await this.axios.post('/api/auth/register', {
                 username: username,
                 password: password,
-                email: email,
-                realName: realName
+                email: email
             });
             return response.data;
         } catch (error) {

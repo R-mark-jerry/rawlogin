@@ -2,8 +2,10 @@ package com.rawlogin.application.impl;
 
 import com.rawlogin.application.UserApplicationService;
 import com.rawlogin.domain.model.User;
+import com.rawlogin.application.dto.UserDTO;
 import com.rawlogin.domain.repository.UserRepository;
 import com.rawlogin.domain.service.UserDomainService;
+import com.rawlogin.application.converter.UserConverter;
 import com.rawlogin.common.Result;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -13,6 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 /**
  * 用户应用服务实现
@@ -31,7 +34,7 @@ public class UserApplicationServiceImpl implements UserApplicationService {
     private UserDomainService userDomainService;
     
     @Override
-    public Result<User> login(String username, String password) {
+    public Result<UserDTO> login(String username, String password) {
         try {
             logger.info("用户登录尝试: {}", username);
             
@@ -65,8 +68,11 @@ public class UserApplicationServiceImpl implements UserApplicationService {
             // 清除敏感信息
             userDomainService.clearSensitiveInfo(foundUser);
             
+            // 转换为DTO
+            UserDTO userDTO = UserConverter.toDTO(foundUser);
+            
             logger.info("用户登录成功: {}", username);
-            return Result.success("登录成功", foundUser);
+            return Result.success("登录成功", userDTO);
             
         } catch (Exception e) {
             logger.error("登录过程中发生异常", e);
@@ -75,7 +81,7 @@ public class UserApplicationServiceImpl implements UserApplicationService {
     }
     
     @Override
-    public Result<User> register(User user) {
+    public Result<UserDTO> register(User user) {
         try {
             logger.info("用户注册尝试: {}", user.getUsername());
             
@@ -100,8 +106,11 @@ public class UserApplicationServiceImpl implements UserApplicationService {
             // 清除敏感信息
             userDomainService.clearSensitiveInfo(savedUser);
             
+            // 转换为DTO
+            UserDTO userDTO = UserConverter.toDTO(savedUser);
+            
             logger.info("用户注册成功: {}", user.getUsername());
-            return Result.success("注册成功", savedUser);
+            return Result.success("注册成功", userDTO);
             
         } catch (Exception e) {
             logger.error("注册过程中发生异常", e);
@@ -110,7 +119,7 @@ public class UserApplicationServiceImpl implements UserApplicationService {
     }
     
     @Override
-    public Result<User> getCurrentUser(Integer userId) {
+    public Result<UserDTO> getCurrentUser(Integer userId) {
         try {
             Optional<User> userOpt = userRepository.findById(userId);
             if (!userOpt.isPresent()) {
@@ -120,7 +129,10 @@ public class UserApplicationServiceImpl implements UserApplicationService {
             User user = userOpt.get();
             userDomainService.clearSensitiveInfo(user);
             
-            return Result.success("获取用户信息成功", user);
+            // 转换为DTO
+            UserDTO userDTO = UserConverter.toDTO(user);
+            
+            return Result.success("获取用户信息成功", userDTO);
         } catch (Exception e) {
             logger.error("获取当前用户信息时发生异常: {}", userId, e);
             return Result.error("系统错误，请稍后再试");
@@ -128,14 +140,19 @@ public class UserApplicationServiceImpl implements UserApplicationService {
     }
     
     @Override
-    public Result<List<User>> getAllUsers() {
+    public Result<List<UserDTO>> getAllUsers() {
         try {
             List<User> users = userRepository.findAll();
             
             // 清除所有用户的敏感信息
             users.forEach(userDomainService::clearSensitiveInfo);
             
-            return Result.success("获取用户列表成功", users);
+            // 转换为DTO列表
+            List<UserDTO> userDTOs = users.stream()
+                    .map(UserConverter::toDTO)
+                    .collect(Collectors.toList());
+            
+            return Result.success("获取用户列表成功", userDTOs);
         } catch (Exception e) {
             logger.error("获取用户列表时发生异常", e);
             return Result.error("系统错误，请稍后再试");
@@ -143,7 +160,7 @@ public class UserApplicationServiceImpl implements UserApplicationService {
     }
     
     @Override
-    public Result<User> getUserById(Integer id) {
+    public Result<UserDTO> getUserById(Integer id) {
         try {
             Optional<User> userOpt = userRepository.findById(id);
             if (!userOpt.isPresent()) {
@@ -153,7 +170,10 @@ public class UserApplicationServiceImpl implements UserApplicationService {
             User user = userOpt.get();
             userDomainService.clearSensitiveInfo(user);
             
-            return Result.success("找到用户", user);
+            // 转换为DTO
+            UserDTO userDTO = UserConverter.toDTO(user);
+            
+            return Result.success("找到用户", userDTO);
         } catch (Exception e) {
             logger.error("根据ID查找用户时发生异常: {}", id, e);
             return Result.error("系统错误，请稍后再试");
@@ -161,7 +181,7 @@ public class UserApplicationServiceImpl implements UserApplicationService {
     }
     
     @Override
-    public Result<User> updateUser(User user) {
+    public Result<UserDTO> updateUser(User user) {
         try {
             // 参数验证
             if (user.getId() == null) {
@@ -177,8 +197,11 @@ public class UserApplicationServiceImpl implements UserApplicationService {
             User updatedUser = userRepository.update(user);
             userDomainService.clearSensitiveInfo(updatedUser);
             
+            // 转换为DTO
+            UserDTO userDTO = UserConverter.toDTO(updatedUser);
+            
             logger.info("用户更新成功: {}", user.getUsername());
-            return Result.success("更新成功", updatedUser);
+            return Result.success("更新成功", userDTO);
         } catch (Exception e) {
             logger.error("更新用户时发生异常", e);
             return Result.error("系统错误，请稍后再试");
@@ -230,14 +253,19 @@ public class UserApplicationServiceImpl implements UserApplicationService {
     }
     
     @Override
-    public Result<List<User>> searchUsers(String username, String email, Integer status, String role) {
+    public Result<List<UserDTO>> searchUsers(String username, String email, Integer status, String role) {
         try {
             List<User> users = userRepository.findByCondition(username, email, status, role);
             
             // 清除所有用户的敏感信息
             users.forEach(userDomainService::clearSensitiveInfo);
             
-            return Result.success("查询成功", users);
+            // 转换为DTO列表
+            List<UserDTO> userDTOs = users.stream()
+                    .map(UserConverter::toDTO)
+                    .collect(Collectors.toList());
+            
+            return Result.success("查询成功", userDTOs);
         } catch (Exception e) {
             logger.error("根据条件查询用户时发生异常", e);
             return Result.error("系统错误，请稍后再试");

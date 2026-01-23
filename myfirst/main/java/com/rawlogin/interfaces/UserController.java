@@ -1,9 +1,13 @@
 package com.rawlogin.interfaces;
 
 import com.rawlogin.application.UserApplicationService;
+import com.rawlogin.application.dto.UserDTO;
+import com.rawlogin.interfaces.vo.UserVO;
 import com.rawlogin.domain.model.User;
 import com.rawlogin.domain.service.UserDomainService;
+import com.rawlogin.application.converter.UserConverter;
 import com.rawlogin.common.Result;
+import com.rawlogin.config.annotation.PreAuthorize;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -11,6 +15,7 @@ import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * 用户管理接口控制器
@@ -33,18 +38,21 @@ public class UserController {
      * @return 用户列表
      */
     @GetMapping
-    public Result<List<User>> getAllUsers(HttpServletRequest request) {
+    @PreAuthorize(value = "sys:user:list", authenticated = true)
+    public Result<List<UserVO>> getAllUsers() {
         logger.info("获取所有用户列表");
         
-        // 从请求属性中获取当前用户信息（由JWT拦截器设置）
-        String currentRole = (String) request.getAttribute("role");
-        
-        // 检查权限：只有管理员可以获取所有用户列表
-        if (!"ADMIN".equals(currentRole)) {
-            return Result.error("权限不足，只有管理员可以获取用户列表");
+        Result<List<UserDTO>> result = userApplicationService.getAllUsers();
+        if (!result.isSuccess()) {
+            return Result.error(result.getMessage());
         }
         
-        return userApplicationService.getAllUsers();
+        // 转换为VO列表
+        List<UserVO> userVOs = result.getData().stream()
+                .map(UserConverter::toVO)
+                .collect(Collectors.toList());
+        
+        return Result.success(result.getMessage(), userVOs);
     }
     
     /**
@@ -53,7 +61,8 @@ public class UserController {
      * @return 用户信息
      */
     @GetMapping("/{id}")
-    public Result<User> getUserById(@PathVariable Integer id, HttpServletRequest request) {
+    @PreAuthorize(value = "sys:user:view", authenticated = true)
+    public Result<UserVO> getUserById(@PathVariable Integer id, HttpServletRequest request) {
         logger.info("根据ID获取用户信息: {}", id);
         
         // 从请求属性中获取当前用户信息（由JWT拦截器设置）
@@ -65,7 +74,15 @@ public class UserController {
             return Result.error("权限不足，只有管理员可以查看其他用户信息");
         }
         
-        return userApplicationService.getUserById(id);
+        Result<UserDTO> result = userApplicationService.getUserById(id);
+        if (!result.isSuccess()) {
+            return Result.error(result.getMessage());
+        }
+        
+        // 转换为VO
+        UserVO userVO = UserConverter.toVO(result.getData());
+        
+        return Result.success(result.getMessage(), userVO);
     }
     
     /**
@@ -77,54 +94,55 @@ public class UserController {
      * @return 查询结果
      */
     @GetMapping("/search")
-    public Result<List<User>> searchUsers(
+    @PreAuthorize(value = "sys:user:list", authenticated = true)
+    public Result<List<UserVO>> searchUsers(
             @RequestParam(required = false) String username,
             @RequestParam(required = false) String email,
             @RequestParam(required = false) Integer status,
-            @RequestParam(required = false) String role,
-            HttpServletRequest request) {
+            @RequestParam(required = false) String role) {
         logger.info("根据条件查询用户: username={}, email={}, status={}, role={}", username, email, status, role);
         
-        // 从请求属性中获取当前用户信息（由JWT拦截器设置）
-        String currentRole = (String) request.getAttribute("role");
-        
-        // 检查权限：只有管理员可以查询用户列表
-        if (!"ADMIN".equals(currentRole)) {
-            return Result.error("权限不足，只有管理员可以查询用户列表");
+        Result<List<UserDTO>> result = userApplicationService.searchUsers(username, email, status, role);
+        if (!result.isSuccess()) {
+            return Result.error(result.getMessage());
         }
         
-        return userApplicationService.searchUsers(username, email, status, role);
+        // 转换为VO列表
+        List<UserVO> userVOs = result.getData().stream()
+                .map(UserConverter::toVO)
+                .collect(Collectors.toList());
+        
+        return Result.success(result.getMessage(), userVOs);
     }
     
     /**
      * 创建新用户接口
      * @param userCreateRequest 用户创建请求
-     * @param request HTTP请求
      * @return 创建结果
      */
     @PostMapping
-    public Result<User> createUser(@RequestBody UserCreateRequest userCreateRequest, HttpServletRequest request) {
+    @PreAuthorize(value = "sys:user:create", authenticated = true)
+    public Result<UserVO> createUser(@RequestBody UserCreateRequest userCreateRequest) {
         logger.info("创建新用户: {}", userCreateRequest.getUsername());
-        
-        // 从请求属性中获取当前用户信息（由JWT拦截器设置）
-        String currentRole = (String) request.getAttribute("role");
-        
-        // 检查权限：只有管理员可以创建用户
-        if (!"ADMIN".equals(currentRole)) {
-            return Result.error("权限不足，只有管理员可以创建用户");
-        }
         
         // 创建用户对象
         User user = new User();
         user.setUsername(userCreateRequest.getUsername());
         user.setPassword(userCreateRequest.getPassword());
         user.setEmail(userCreateRequest.getEmail());
-        user.setRealName(userCreateRequest.getRealName());
         user.setStatus(userCreateRequest.getStatus() != null ? userCreateRequest.getStatus() : 1);
         user.setRole(userCreateRequest.getRole() != null ? userCreateRequest.getRole() : "USER");
         
         // 调用应用服务层
-        return userApplicationService.register(user);
+        Result<UserDTO> result = userApplicationService.register(user);
+        if (!result.isSuccess()) {
+            return Result.error(result.getMessage());
+        }
+        
+        // 转换为VO
+        UserVO userVO = UserConverter.toVO(result.getData());
+        
+        return Result.success(result.getMessage(), userVO);
     }
     
     /**
@@ -135,7 +153,8 @@ public class UserController {
      * @return 更新结果
      */
     @PutMapping("/{id}")
-    public Result<User> updateUser(@PathVariable Integer id,
+    @PreAuthorize(value = "sys:user:edit", authenticated = true)
+    public Result<UserVO> updateUser(@PathVariable Integer id,
                                   @RequestBody UserUpdateRequest userUpdateRequest,
                                   HttpServletRequest request) {
         logger.info("更新用户信息: {}", id);
@@ -150,7 +169,7 @@ public class UserController {
         }
         
         // 防止普通用户修改自己的角色
-        if (!"ADMIN".equals(currentRole) && userUpdateRequest.getRole() != null && 
+        if (!"ADMIN".equals(currentRole) && userUpdateRequest.getRole() != null &&
             !userUpdateRequest.getRole().equals("USER")) {
             return Result.error("普通用户不能修改自己的角色");
         }
@@ -161,7 +180,6 @@ public class UserController {
         user.setUsername(userUpdateRequest.getUsername());
         user.setPassword(userUpdateRequest.getPassword());
         user.setEmail(userUpdateRequest.getEmail());
-        user.setRealName(userUpdateRequest.getRealName());
         user.setStatus(userUpdateRequest.getStatus());
         
         // 只有管理员可以修改角色
@@ -170,7 +188,15 @@ public class UserController {
         }
         
         // 调用应用服务层
-        return userApplicationService.updateUser(user);
+        Result<UserDTO> result = userApplicationService.updateUser(user);
+        if (!result.isSuccess()) {
+            return Result.error(result.getMessage());
+        }
+        
+        // 转换为VO
+        UserVO userVO = UserConverter.toVO(result.getData());
+        
+        return Result.success(result.getMessage(), userVO);
     }
     
     /**
@@ -180,17 +206,12 @@ public class UserController {
      * @return 删除结果
      */
     @DeleteMapping("/{id}")
+    @PreAuthorize(value = "sys:user:delete", authenticated = true)
     public Result<Void> deleteUser(@PathVariable Integer id, HttpServletRequest request) {
         logger.info("删除用户: {}", id);
         
         // 从请求属性中获取当前用户信息（由JWT拦截器设置）
-        String currentRole = (String) request.getAttribute("role");
         Integer currentUserId = (Integer) request.getAttribute("userId");
-        
-        // 检查权限：只有管理员可以删除用户
-        if (!"ADMIN".equals(currentRole)) {
-            return Result.error("权限不足，只有管理员可以删除用户");
-        }
         
         // 防止用户删除自己
         if (currentUserId.equals(id)) {
@@ -208,17 +229,12 @@ public class UserController {
      * @return 删除结果
      */
     @DeleteMapping("/batch")
+    @PreAuthorize(value = "sys:user:delete", authenticated = true)
     public Result<Void> batchDeleteUsers(@RequestBody List<Integer> userIds, HttpServletRequest request) {
         logger.info("批量删除用户: {}", userIds);
         
         // 从请求属性中获取当前用户信息（由JWT拦截器设置）
-        String currentRole = (String) request.getAttribute("role");
         Integer currentUserId = (Integer) request.getAttribute("userId");
-        
-        // 检查权限：只有管理员可以批量删除用户
-        if (!"ADMIN".equals(currentRole)) {
-            return Result.error("权限不足，只有管理员可以批量删除用户");
-        }
         
         // 防止用户删除自己
         if (userIds.contains(currentUserId)) {
@@ -236,7 +252,6 @@ public class UserController {
         private String username;
         private String password;
         private String email;
-        private String realName;
         private Integer status;
         private String role;
         
@@ -262,14 +277,6 @@ public class UserController {
         
         public void setEmail(String email) {
             this.email = email;
-        }
-        
-        public String getRealName() {
-            return realName;
-        }
-        
-        public void setRealName(String realName) {
-            this.realName = realName;
         }
         
         public Integer getStatus() {
@@ -296,7 +303,6 @@ public class UserController {
         private String username;
         private String password;
         private String email;
-        private String realName;
         private Integer status;
         private String role;
         
@@ -322,14 +328,6 @@ public class UserController {
         
         public void setEmail(String email) {
             this.email = email;
-        }
-        
-        public String getRealName() {
-            return realName;
-        }
-        
-        public void setRealName(String realName) {
-            this.realName = realName;
         }
         
         public Integer getStatus() {

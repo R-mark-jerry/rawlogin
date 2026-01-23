@@ -164,7 +164,7 @@ class App {
             // 更新用户信息显示
             document.getElementById('displayUsername').textContent = this.currentUser.username;
             document.getElementById('displayUsername2').textContent = this.currentUser.username;
-            document.getElementById('displayRealName').textContent = this.currentUser.realName || '未设置';
+            document.getElementById('displayRealName').textContent = '未设置';
             document.getElementById('displayEmail').textContent = this.currentUser.email || '未设置';
             
             // 格式化日期
@@ -243,8 +243,6 @@ class App {
         const username = document.getElementById('regUsername').value.trim();
         const password = document.getElementById('regPassword').value.trim();
         const email = document.getElementById('regEmail').value.trim();
-        const realName = document.getElementById('regRealName').value.trim();
-        
         // 显示加载状态
         const registerButton = document.getElementById('registerButton');
         const originalText = registerButton.textContent;
@@ -252,7 +250,7 @@ class App {
         registerButton.disabled = true;
         
         try {
-            const result = await apiClient.register(username, password, email, realName);
+            const result = await apiClient.register(username, password, email);
             
             if (result.success) {
                 this.showRegisterMessage('注册成功！请使用您的账户登录', 'success');
@@ -260,7 +258,6 @@ class App {
                 document.getElementById('regUsername').value = '';
                 document.getElementById('regPassword').value = '';
                 document.getElementById('regEmail').value = '';
-                document.getElementById('regRealName').value = '';
                 
                 // 3秒后跳转到登录页面
                 setTimeout(() => {
@@ -502,8 +499,8 @@ class App {
             // 用户名
             row.insertCell(1).textContent = user.username;
             
-            // 真实姓名
-            row.insertCell(2).textContent = user.realName || '-';
+            // 真实姓名（已移除，使用空字符串代替）
+            row.insertCell(2).textContent = '-';
             
             // 邮箱
             row.insertCell(3).textContent = user.email || '-';
@@ -566,7 +563,6 @@ class App {
         document.getElementById('userId').value = '';
         document.getElementById('userUsername').value = '';
         document.getElementById('userPassword').value = '';
-        document.getElementById('userRealName').value = '';
         document.getElementById('userEmail').value = '';
         document.getElementById('userRole').value = 'USER';
         
@@ -591,7 +587,6 @@ class App {
                 // 填充表单
                 document.getElementById('userId').value = userData.id;
                 document.getElementById('userUsername').value = userData.username;
-                document.getElementById('userRealName').value = userData.realName || '';
                 document.getElementById('userEmail').value = userData.email || '';
                 document.getElementById('userRole').value = userData.role;
                 
@@ -628,7 +623,6 @@ class App {
         const userId = document.getElementById('userId').value;
         const userData = {
             username: document.getElementById('userUsername').value.trim(),
-            realName: document.getElementById('userRealName').value.trim(),
             email: document.getElementById('userEmail').value.trim(),
             role: document.getElementById('userRole').value
         };

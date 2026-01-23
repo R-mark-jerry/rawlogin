@@ -1,6 +1,7 @@
 package com.rawlogin.application;
 
 import com.rawlogin.domain.model.User;
+import com.rawlogin.application.dto.UserDTO;
 import com.rawlogin.common.Result;
 
 import java.util.List;
@@ -17,41 +18,41 @@ public interface UserApplicationService {
      * @param password 密码
      * @return 登录结果
      */
-    Result<User> login(String username, String password);
+    Result<UserDTO> login(String username, String password);
     
     /**
      * 用户注册用例
      * @param user 用户对象
      * @return 注册结果
      */
-    Result<User> register(User user);
+    Result<UserDTO> register(User user);
     
     /**
      * 获取当前用户信息用例
      * @param userId 用户ID
      * @return 用户信息
      */
-    Result<User> getCurrentUser(Integer userId);
+    Result<UserDTO> getCurrentUser(Integer userId);
     
     /**
      * 获取所有用户用例
      * @return 用户列表
      */
-    Result<List<User>> getAllUsers();
+    Result<List<UserDTO>> getAllUsers();
     
     /**
      * 根据ID获取用户用例
      * @param id 用户ID
      * @return 用户信息
      */
-    Result<User> getUserById(Integer id);
+    Result<UserDTO> getUserById(Integer id);
     
     /**
      * 更新用户信息用例
      * @param user 用户对象
      * @return 更新结果
      */
-    Result<User> updateUser(User user);
+    Result<UserDTO> updateUser(User user);
     
     /**
      * 删除用户用例
@@ -75,5 +76,5 @@ public interface UserApplicationService {
      * @param role 角色（可选）
      * @return 查询结果
      */
-    Result<List<User>> searchUsers(String username, String email, Integer status, String role);
+    Result<List<UserDTO>> searchUsers(String username, String email, Integer status, String role);
 }
