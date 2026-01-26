@@ -44,22 +44,19 @@ public class AuthController {
         logger.info("用户登录尝试: {}", loginRequest.getUsername());
         
         // 调用应用服务层
-        Result<UserDTO> result = userApplicationService.login(loginRequest.getUsername(), loginRequest.getPassword());
+        Result<UserVO> result = userApplicationService.login(loginRequest.getUsername(), loginRequest.getPassword());
         
         if (result.isSuccess()) {
             // 登录成功，生成JWT令牌
-            UserDTO userDTO = result.getData();
-            String token = jwtUtil.generateToken(userDTO.getUsername(), userDTO.getId(), userDTO.getRole());
-            
-            // 转换为VO
-            UserVO userVO = UserConverter.toVO(userDTO);
+            UserVO userVO = result.getData();
+            String token = jwtUtil.generateToken(userVO.getUsername(), userVO.getId(), userVO.getRole());
             
             // 构建返回数据
             Map<String, Object> data = new HashMap<>();
             data.put("token", token);
             data.put("user", userVO);
             
-            logger.info("用户登录成功: {}", userDTO.getUsername());
+            logger.info("用户登录成功: {}", userVO.getUsername());
             return ResponseEntity.ok(Result.success("登录成功", data));
         } else {
             // 登录失败
@@ -77,21 +74,18 @@ public class AuthController {
     public ResponseEntity<Result<UserVO>> register(@RequestBody RegisterRequest registerRequest) {
         logger.info("用户注册尝试: {}", registerRequest.getUsername());
         
-        // 创建用户对象
-        User user = new User();
-        user.setUsername(registerRequest.getUsername());
-        user.setPassword(registerRequest.getPassword());
-        user.setEmail(registerRequest.getEmail());
+        // 创建用户DTO对象
+        UserDTO userDTO = new UserDTO();
+        userDTO.setUsername(registerRequest.getUsername());
+        userDTO.setPassword(registerRequest.getPassword());
+        userDTO.setEmail(registerRequest.getEmail());
         
         // 调用应用服务层
-        Result<UserDTO> result = userApplicationService.register(user);
+        Result<UserVO> result = userApplicationService.register(userDTO);
         
         if (result.isSuccess()) {
-            // 转换为VO
-            UserVO userVO = UserConverter.toVO(result.getData());
-            
             logger.info("用户注册成功: {}", registerRequest.getUsername());
-            return ResponseEntity.ok(Result.success("注册成功", userVO));
+            return ResponseEntity.ok(Result.success("注册成功", result.getData()));
         } else {
             logger.warn("用户注册失败: {} - {}", registerRequest.getUsername(), result.getMessage());
             return ResponseEntity.status(400).body(Result.error(result.getMessage()));
@@ -112,11 +106,9 @@ public class AuthController {
             
             if (userId != null) {
                 // 获取完整用户信息
-                Result<UserDTO> userResult = userApplicationService.getCurrentUser(userId);
+                Result<UserVO> userResult = userApplicationService.getCurrentUser(userId);
                 if (userResult.isSuccess()) {
-                    // 转换为VO
-                    UserVO userVO = UserConverter.toVO(userResult.getData());
-                    return ResponseEntity.ok(Result.success("获取用户信息成功", userVO));
+                    return ResponseEntity.ok(Result.success("获取用户信息成功", userResult.getData()));
                 }
             }
             

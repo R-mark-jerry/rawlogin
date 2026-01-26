@@ -210,6 +210,120 @@ class ApiClient {
         }
     }
     
+    // ===== 角色管理相关API =====
+    
+    // 获取所有角色
+    async getAllRoles() {
+        try {
+            const response = await this.axios.get('/api/roles/list');
+            return response.data;
+        } catch (error) {
+            throw this.handleError(error);
+        }
+    }
+    
+    // 添加角色
+    async addRole(roleData) {
+        try {
+            const response = await this.axios.post('/api/roles/create', roleData);
+            return response.data;
+        } catch (error) {
+            throw this.handleError(error);
+        }
+    }
+    
+    // 更新角色
+    async updateRole(roleId, roleData) {
+        try {
+            const response = await this.axios.put(`/api/roles/${roleId}`, roleData);
+            return response.data;
+        } catch (error) {
+            throw this.handleError(error);
+        }
+    }
+    
+    // 删除角色
+    async deleteRole(roleId) {
+        try {
+            const response = await this.axios.delete(`/api/roles/${roleId}`);
+            return response.data;
+        } catch (error) {
+            throw this.handleError(error);
+        }
+    }
+    
+    // ===== 用户角色管理相关API =====
+    
+    // 获取用户的所有角色
+    async getUserRoles(userId) {
+        try {
+            const response = await this.axios.get(`/api/user-roles/user/${userId}`);
+            return response.data;
+        } catch (error) {
+            throw this.handleError(error);
+        }
+    }
+    
+    // 为用户分配角色
+    async assignRolesToUser(userId, roleIds) {
+        try {
+            const response = await this.axios.post(`/api/user-roles/user/${userId}/assign`, { roleIds });
+            return response.data;
+        } catch (error) {
+            throw this.handleError(error);
+        }
+    }
+    
+    // 移除用户的所有角色
+    async removeAllRolesFromUser(userId) {
+        try {
+            const response = await this.axios.delete(`/api/user-roles/user/${userId}`);
+            return response.data;
+        } catch (error) {
+            throw this.handleError(error);
+        }
+    }
+    
+    // 移除用户的指定角色
+    async removeRoleFromUser(userId, roleId) {
+        try {
+            const response = await this.axios.delete(`/api/user-roles/user/${userId}/role/${roleId}`);
+            return response.data;
+        } catch (error) {
+            throw this.handleError(error);
+        }
+    }
+    
+    // 检查用户是否拥有指定角色
+    async checkUserHasRole(userId, roleCode) {
+        try {
+            const response = await this.axios.get(`/api/user-roles/user/${userId}/check/${roleCode}`);
+            return response.data;
+        } catch (error) {
+            throw this.handleError(error);
+        }
+    }
+    
+    // 获取角色的所有用户ID
+    async getUserIdsByRoleId(roleId) {
+        try {
+            const response = await this.axios.get(`/api/user-roles/role/${roleId}/users`);
+            return response.data;
+        } catch (error) {
+            throw this.handleError(error);
+        }
+    }
+    
+    // 获取用户的所有角色代码
+    async getUserRoleCodes(userId) {
+        try {
+            const response = await this.axios.get(`/api/user-roles/user/${userId}/codes`);
+            return response.data;
+        } catch (error) {
+            throw this.handleError(error);
+        }
+    }
+    
     // 错误处理
     handleError(error) {
         if (error.response) {

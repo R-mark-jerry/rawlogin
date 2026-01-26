@@ -1,6 +1,6 @@
 package com.rawlogin.infrastructure.repository;
 
-import com.rawlogin.domain.model.User;
+import com.rawlogin.application.dto.UserDTO;
 import com.rawlogin.domain.repository.UserRepository;
 import com.rawlogin.infrastructure.persistence.UserMapper;
 import com.rawlogin.infrastructure.po.UserPO;
@@ -22,22 +22,22 @@ public class UserRepositoryImpl implements UserRepository {
     private UserMapper userMapper;
     
     @Override
-    public User save(User user) {
-        UserPO po = UserConverter.toPO(user);
+    public UserDTO save(UserDTO userDTO) {
+        UserPO po = UserConverter.toPO(userDTO);
         userMapper.insert(po);
-        return UserConverter.toDomain(po);
+        return UserConverter.toDTO(po);
     }
     
     @Override
-    public Optional<User> findById(Integer id) {
+    public Optional<UserDTO> findById(Integer id) {
         UserPO po = userMapper.selectById(id);
-        return Optional.ofNullable(UserConverter.toDomain(po));
+        return Optional.ofNullable(UserConverter.toDTO(po));
     }
     
     @Override
-    public Optional<User> findByUsername(String username) {
+    public Optional<UserDTO> findByUsername(String username) {
         UserPO po = userMapper.selectByUsername(username);
-        return Optional.ofNullable(UserConverter.toDomain(po));
+        return Optional.ofNullable(UserConverter.toDTO(po));
     }
     
     @Override
@@ -51,10 +51,10 @@ public class UserRepositoryImpl implements UserRepository {
     }
     
     @Override
-    public User update(User user) {
-        UserPO po = UserConverter.toPO(user);
+    public UserDTO update(UserDTO userDTO) {
+        UserPO po = UserConverter.toPO(userDTO);
         userMapper.updateById(po);
-        return UserConverter.toDomain(po);
+        return UserConverter.toDTO(po);
     }
     
     @Override
@@ -69,15 +69,15 @@ public class UserRepositoryImpl implements UserRepository {
     }
     
     @Override
-    public List<User> findAll() {
+    public List<UserDTO> findAll() {
         List<UserPO> pos = userMapper.selectList(null);
-        return UserConverter.toDomainList(pos);
+        return UserConverter.toDTOList(pos);
     }
     
     @Override
-    public List<User> findByCondition(String username, String email, Integer status, String role) {
+    public List<UserDTO> findByCondition(String username, String email, Integer status, String role) {
         List<UserPO> pos = userMapper.selectByCondition(username, email, status, role);
-        return UserConverter.toDomainList(pos);
+        return UserConverter.toDTOList(pos);
     }
     
     @Override

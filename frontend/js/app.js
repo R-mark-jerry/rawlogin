@@ -48,8 +48,18 @@ class App {
             this.showUserManagement();
         });
         
+        // 角色管理按钮
+        document.getElementById('roleManagementBtn').addEventListener('click', () => {
+            this.showRoleManagement();
+        });
+        
         // 用户管理页面登出按钮
         document.getElementById('mgmtLogoutButton').addEventListener('click', () => {
+            this.handleLogout();
+        });
+        
+        // 角色管理页面登出按钮
+        document.getElementById('roleLogoutButton').addEventListener('click', () => {
             this.handleLogout();
         });
         
@@ -79,8 +89,15 @@ class App {
         });
         
         // 模态框关闭按钮
-        document.querySelector('.close').addEventListener('click', () => {
-            this.closeUserModal();
+        document.querySelectorAll('.close').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const modal = e.target.closest('.modal');
+                if (modal && modal.id === 'userModal') {
+                    this.closeUserModal();
+                } else if (modal && modal.id === 'roleModal') {
+                    this.closeRoleModal();
+                }
+            });
         });
         
         // 保存用户按钮
@@ -91,6 +108,21 @@ class App {
         // 取消用户按钮
         document.getElementById('cancelUserBtn').addEventListener('click', () => {
             this.closeUserModal();
+        });
+        
+        // 添加角色按钮
+        document.getElementById('addRoleBtn').addEventListener('click', () => {
+            this.showAddRoleModal();
+        });
+        
+        // 保存角色按钮
+        document.getElementById('saveRoleBtn').addEventListener('click', () => {
+            this.saveRole();
+        });
+        
+        // 取消角色按钮
+        document.getElementById('cancelRoleBtn').addEventListener('click', () => {
+            this.closeRoleModal();
         });
         
         // 输入框获得焦点时隐藏错误消息
@@ -176,13 +208,23 @@ class App {
                 document.getElementById('displayLastLoginTime').textContent = new Date(this.currentUser.lastLoginTime).toLocaleString();
             }
             
-            // 根据用户角色显示或隐藏用户管理按钮
+            // 根据用户角色显示或隐藏管理按钮
             const userManagementBtn = document.getElementById('userManagementBtn');
+            const roleManagementBtn = document.getElementById('roleManagementBtn');
+            
             if (userManagementBtn) {
                 if (this.currentUser.role === 'ADMIN') {
                     userManagementBtn.style.display = 'inline-block';
                 } else {
                     userManagementBtn.style.display = 'none';
+                }
+            }
+            
+            if (roleManagementBtn) {
+                if (this.currentUser.role === 'ADMIN') {
+                    roleManagementBtn.style.display = 'inline-block';
+                } else {
+                    roleManagementBtn.style.display = 'none';
                 }
             }
             
@@ -519,12 +561,18 @@ class App {
             editBtn.textContent = '✏️ 编辑';
             editBtn.onclick = () => this.editUser(user);
             
+            const assignRoleBtn = document.createElement('button');
+            assignRoleBtn.className = 'btn-role';
+            assignRoleBtn.textContent = '👥 分配角色';
+            assignRoleBtn.onclick = () => this.showAssignRoleModal(user);
+            
             const deleteBtn = document.createElement('button');
             deleteBtn.className = 'btn-delete';
             deleteBtn.textContent = '🗑️ 删除';
             deleteBtn.onclick = () => this.deleteUser(user.id);
             
             actionCell.appendChild(editBtn);
+            actionCell.appendChild(assignRoleBtn);
             actionCell.appendChild(deleteBtn);
         });
         
@@ -774,6 +822,395 @@ class App {
         } catch (error) {
             console.error('批量删除用户失败:', error);
             this.showMessage('批量删除用户失败', 'error');
+        }
+    }
+    
+    // ===== 角色管理相关方法 =====
+    
+    // 显示角色管理页面
+    async showRoleManagement() {
+        try {
+            // 检查用户是否已登录
+            if (!this.currentUser) {
+                this.showMessage('请先登录', 'error');
+                this.showPage('login');
+                return;
+            }
+           
+            // 检查用户是否为管理员
+            if (this.currentUser.role !== 'ADMIN') {
+                this.showMessage('权限不足，只有管理员可以访问角色管理', 'error');
+                return;
+            }
+           
+            // 显示角色管理页面
+            this.showPage('roleManagement');
+           
+            // 加载角色列表
+            await this.loadRoles();
+        } catch (error) {
+            console.error('显示角色管理页面失败:', error);
+            this.showMessage('加载角色管理页面失败', 'error');
+        }
+    }
+    
+    // 加载角色列表
+    async loadRoles() {
+        try {
+            const result = await apiClient.getAllRoles();
+            if (result.success) {
+                this.renderRoleTable(result.data);
+            } else {
+                this.showMessage(result.message || '获取角色列表失败', 'error');
+            }
+        } catch (error) {
+            console.error('加载角色列表失败:', error);
+            this.showMessage('获取角色列表失败', 'error');
+        }
+    }
+    
+    // 渲染角色表格
+    renderRoleTable(roles) {
+        const tbody = document.querySelector('#roleTable tbody');
+        if (!tbody) return;
+        
+        // 清空表格
+        tbody.innerHTML = '';
+        
+        // 更新表格信息
+        const tableInfo = document.getElementById('roleTableInfo');
+        if (tableInfo) {
+            tableInfo.textContent = `共 ${roles ? roles.length : 0} 个角色`;
+        }
+        
+        if (!roles || roles.length === 0) {
+            const row = tbody.insertRow();
+            const cell = row.insertCell(0);
+            cell.colSpan = 6;
+            cell.innerHTML = '<div style="text-align: center; padding: 20px; color: #6c757d;">📭 暂无角色数据</div>';
+            return;
+        }
+        
+        // 添加角色数据
+        roles.forEach(role => {
+            const row = tbody.insertRow();
+           
+            // ID
+            row.insertCell(0).textContent = role.id;
+            
+            // 角色名称
+            row.insertCell(1).textContent = role.name;
+            
+            // 角色代码
+            const codeCell = row.insertCell(2);
+            const codeBadge = document.createElement('span');
+            codeBadge.className = 'badge';
+            codeBadge.style.backgroundColor = role.code === 'ADMIN' ? '#dc3545' : '#28a745';
+            codeBadge.style.color = 'white';
+            codeBadge.textContent = role.code;
+            codeCell.appendChild(codeBadge);
+            
+            // 描述
+            row.insertCell(3).textContent = role.description || '-';
+            
+            // 权限
+            const permissionCell = row.insertCell(4);
+            if (role.permissions && role.permissions.length > 0) {
+                const permissionContainer = document.createElement('div');
+                role.permissions.forEach(permission => {
+                    const tag = document.createElement('span');
+                    tag.className = 'permission-tag';
+                    
+                    // 根据权限类型设置不同的样式
+                    if (permission.startsWith('sys:user:')) {
+                        tag.classList.add('user-management');
+                    } else if (permission.startsWith('sys:role:')) {
+                        tag.classList.add('role-management');
+                    } else if (permission.startsWith('sys:')) {
+                        tag.classList.add('system-management');
+                    }
+                    
+                    tag.textContent = this.getPermissionDisplayName(permission);
+                    permissionContainer.appendChild(tag);
+                });
+                permissionCell.appendChild(permissionContainer);
+            } else {
+                permissionCell.textContent = '-';
+            }
+            
+            // 操作按钮
+            const actionCell = row.insertCell(5);
+            const editBtn = document.createElement('button');
+            editBtn.className = 'btn-edit';
+            editBtn.textContent = '✏️ 编辑';
+            editBtn.onclick = () => this.editRole(role);
+            
+            const deleteBtn = document.createElement('button');
+            deleteBtn.className = 'btn-delete';
+            deleteBtn.textContent = '🗑️ 删除';
+            deleteBtn.onclick = () => this.deleteRole(role.id);
+            
+            actionCell.appendChild(editBtn);
+            // 只有非内置角色才能删除
+            if (role.code !== 'ADMIN' && role.code !== 'USER') {
+                actionCell.appendChild(deleteBtn);
+            }
+        });
+    }
+    
+    // 获取权限显示名称
+    getPermissionDisplayName(permission) {
+        const permissionMap = {
+            'sys:user:list': '查看用户',
+            'sys:user:view': '查看用户详情',
+            'sys:user:create': '创建用户',
+            'sys:user:edit': '编辑用户',
+            'sys:user:delete': '删除用户',
+            'sys:role:view': '查看角色',
+            'sys:role:create': '创建角色',
+            'sys:role:edit': '编辑角色',
+            'sys:role:delete': '删除角色',
+            'sys:config:view': '查看配置',
+            'sys:config:edit': '编辑配置',
+            'sys:log:view': '查看日志'
+        };
+        return permissionMap[permission] || permission;
+    }
+    
+    // 显示添加角色模态框
+    showAddRoleModal() {
+        // 重置表单
+        document.getElementById('roleId').value = '';
+        document.getElementById('roleName').value = '';
+        document.getElementById('roleCode').value = '';
+        document.getElementById('roleDescription').value = '';
+        
+        // 重置权限复选框
+        document.querySelectorAll('input[name="permissions"]').forEach(checkbox => {
+            checkbox.checked = false;
+        });
+        
+        // 更新模态框标题
+        document.getElementById('roleModalTitle').textContent = '添加角色';
+        
+        // 显示模态框
+        document.getElementById('roleModal').style.display = 'block';
+    }
+    
+    // 编辑角色
+    async editRole(role) {
+        try {
+            // 填充表单
+            document.getElementById('roleId').value = role.id;
+            document.getElementById('roleName').value = role.name;
+            document.getElementById('roleCode').value = role.code;
+            document.getElementById('roleDescription').value = role.description || '';
+            
+            // 设置权限复选框
+            document.querySelectorAll('input[name="permissions"]').forEach(checkbox => {
+                checkbox.checked = role.permissions && role.permissions.includes(checkbox.value);
+            });
+            
+            // 更新模态框标题
+            document.getElementById('roleModalTitle').textContent = '编辑角色';
+            
+            // 显示模态框
+            document.getElementById('roleModal').style.display = 'block';
+        } catch (error) {
+            console.error('编辑角色失败:', error);
+            this.showMessage('编辑角色失败', 'error');
+        }
+    }
+    
+    // 关闭角色模态框
+    closeRoleModal() {
+        document.getElementById('roleModal').style.display = 'none';
+        // 清除表单验证错误
+        this.hideRoleFieldErrors();
+    }
+    
+    // 保存角色
+    async saveRole() {
+        if (!this.validateRoleForm()) {
+            return;
+        }
+        
+        const roleId = document.getElementById('roleId').value;
+        const roleData = {
+            name: document.getElementById('roleName').value.trim(),
+            code: document.getElementById('roleCode').value.trim(),
+            description: document.getElementById('roleDescription').value.trim(),
+            permissions: Array.from(document.querySelectorAll('input[name="permissions"]:checked'))
+                .map(checkbox => checkbox.value)
+        };
+        
+        try {
+            let result;
+            if (roleId) {
+                // 更新角色
+                result = await apiClient.updateRole(roleId, roleData);
+            } else {
+                // 添加角色
+                result = await apiClient.addRole(roleData);
+            }
+            
+            if (result.success) {
+                this.showMessage(roleId ? '角色更新成功' : '角色添加成功', 'success');
+                this.closeRoleModal();
+                await this.loadRoles();
+            } else {
+                this.showMessage(result.message || '保存角色失败', 'error');
+            }
+        } catch (error) {
+            console.error('保存角色失败:', error);
+            this.showMessage('保存角色失败', 'error');
+        }
+    }
+    
+    // 验证角色表单
+    validateRoleForm() {
+        let isValid = true;
+        this.hideRoleFieldErrors();
+        
+        // 验证角色名称
+        const roleName = document.getElementById('roleName').value.trim();
+        if (roleName === '') {
+            this.showRoleFieldError('roleName', '角色名称不能为空');
+            isValid = false;
+        }
+        
+        // 验证角色代码
+        const roleCode = document.getElementById('roleCode').value.trim();
+        if (roleCode === '') {
+            this.showRoleFieldError('roleCode', '角色代码不能为空');
+            isValid = false;
+        }
+        
+        // 验证权限
+        const permissions = document.querySelectorAll('input[name="permissions"]:checked');
+        if (permissions.length === 0) {
+            alert('请至少选择一个权限');
+            isValid = false;
+        }
+        
+        return isValid;
+    }
+    
+    // 显示角色表单字段错误
+    showRoleFieldError(fieldId, message) {
+        const errorElement = document.getElementById(fieldId + 'Error');
+        if (errorElement) {
+            errorElement.textContent = message;
+            errorElement.style.display = 'block';
+        }
+    }
+    
+    // 隐藏所有角色表单字段错误
+    hideRoleFieldErrors() {
+        const fieldIds = ['roleName', 'roleCode'];
+        fieldIds.forEach(fieldId => {
+            const errorElement = document.getElementById(fieldId + 'Error');
+            if (errorElement) {
+                errorElement.style.display = 'none';
+            }
+        });
+    }
+    
+    // 删除角色
+    async deleteRole(roleId) {
+        if (!confirm('确定要删除这个角色吗？此操作不可恢复。')) {
+            return;
+        }
+        
+        try {
+            const result = await apiClient.deleteRole(roleId);
+            if (result.success) {
+                this.showMessage('角色删除成功', 'success');
+                await this.loadRoles();
+            } else {
+                this.showMessage(result.message || '删除角色失败', 'error');
+            }
+        } catch (error) {
+            console.error('删除角色失败:', error);
+            this.showMessage('删除角色失败', 'error');
+        }
+    }
+    
+    // ===== 用户角色管理相关方法 =====
+    
+    // 显示分配角色模态框
+    async showAssignRoleModal(user) {
+        try {
+            // 获取所有角色
+            const rolesResult = await apiClient.getAllRoles();
+            if (!rolesResult.success) {
+                this.showMessage('获取角色列表失败', 'error');
+                return;
+            }
+            
+            // 获取用户当前角色
+            const userRolesResult = await apiClient.getUserRoles(user.id);
+            const userRoleIds = userRolesResult.success ?
+                userRolesResult.data.map(role => role.id) : [];
+            
+            // 填充角色列表
+            const roleListContainer = document.getElementById('roleListContainer');
+            roleListContainer.innerHTML = '';
+            
+            rolesResult.data.forEach(role => {
+                const roleItem = document.createElement('div');
+                roleItem.className = 'role-item';
+                
+                const checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.id = `role_${role.id}`;
+                checkbox.value = role.id;
+                checkbox.checked = userRoleIds.includes(role.id);
+                
+                const label = document.createElement('label');
+                label.htmlFor = `role_${role.id}`;
+                label.textContent = `${role.name} (${role.code})`;
+                
+                roleItem.appendChild(checkbox);
+                roleItem.appendChild(label);
+                roleListContainer.appendChild(roleItem);
+            });
+            
+            // 保存用户ID
+            document.getElementById('assignRoleUserId').value = user.id;
+            document.getElementById('assignRoleUsername').textContent = user.username;
+            
+            // 显示模态框
+            document.getElementById('assignRoleModal').style.display = 'block';
+        } catch (error) {
+            console.error('显示分配角色模态框失败:', error);
+            this.showMessage('显示分配角色界面失败', 'error');
+        }
+    }
+    
+    // 关闭分配角色模态框
+    closeAssignRoleModal() {
+        document.getElementById('assignRoleModal').style.display = 'none';
+    }
+    
+    // 保存用户角色分配
+    async saveUserRoleAssignment() {
+        try {
+            const userId = document.getElementById('assignRoleUserId').value;
+            const checkedRoles = document.querySelectorAll('#roleListContainer input[type="checkbox"]:checked');
+            const roleIds = Array.from(checkedRoles).map(checkbox => parseInt(checkbox.value));
+            
+            const result = await apiClient.assignRolesToUser(userId, roleIds);
+            if (result.success) {
+                this.showMessage('角色分配成功', 'success');
+                this.closeAssignRoleModal();
+                await this.loadUsers(); // 刷新用户列表
+            } else {
+                this.showMessage(result.message || '角色分配失败', 'error');
+            }
+        } catch (error) {
+            console.error('保存用户角色分配失败:', error);
+            this.showMessage('角色分配失败', 'error');
         }
     }
 }

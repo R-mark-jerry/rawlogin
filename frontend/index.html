@@ -136,6 +136,7 @@
                     
                     <div class="action-buttons">
                         <button class="action-btn" id="userManagementBtn">用户管理</button>
+                        <button class="action-btn" id="roleManagementBtn">角色管理</button>
                         <button class="action-btn">修改密码</button>
                         <button class="action-btn">个人信息</button>
                         <button class="action-btn secondary">系统设置</button>
@@ -227,6 +228,54 @@
             </div>
         </div>
         
+        <!-- 角色管理页面 -->
+        <div id="roleManagementPage" class="page" style="display: none;">
+            <div class="navbar">
+                <h1>用户管理系统</h1>
+                <div class="user-info">
+                    <span>欢迎, <span id="roleDisplayUsername">用户名</span></span>
+                    <button id="roleLogoutButton" class="logout-btn">退出登录</button>
+                </div>
+            </div>
+            
+            <div class="role-management-container">
+                <div class="management-header">
+                    <div>
+                        <h2>角色管理</h2>
+                        <p class="management-subtitle">管理系统中的所有角色和权限</p>
+                    </div>
+                    <button id="addRoleBtn" class="add-role-btn">
+                        <span>➕ 添加角色</span>
+                    </button>
+                </div>
+                
+                <!-- 角色列表 -->
+                <div class="table-section">
+                    <div class="table-header">
+                        <h3>角色列表</h3>
+                        <span class="table-info" id="roleTableInfo">共 0 个角色</span>
+                    </div>
+                    <div class="role-table-container">
+                        <table class="role-table" id="roleTable">
+                            <thead>
+                                <tr>
+                                    <th style="width: 80px;">ID</th>
+                                    <th style="width: 150px;">角色名称</th>
+                                    <th style="width: 120px;">角色代码</th>
+                                    <th style="width: 300px;">描述</th>
+                                    <th style="width: 200px;">权限</th>
+                                    <th style="width: 150px;">操作</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- 角色数据将通过JavaScript动态加载 -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
         <!-- 添加/编辑用户模态框 -->
         <div id="userModal" class="modal" style="display: none;">
             <div class="modal-content">
@@ -273,6 +322,141 @@
                 <div class="modal-footer">
                     <button id="saveUserBtn" class="save-btn">💾 保存</button>
                     <button id="cancelUserBtn" class="cancel-btn">❌ 取消</button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 添加/编辑角色模态框 -->
+        <div id="roleModal" class="modal" style="display: none;">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3 id="roleModalTitle">添加角色</h3>
+                    <span class="close">&times;</span>
+                </div>
+                <div class="modal-body">
+                    <form id="roleForm">
+                        <input type="hidden" id="roleId">
+                        <div class="form-group">
+                            <label for="roleName">角色名称 *</label>
+                            <input type="text" id="roleName" name="name" required>
+                            <div class="info">角色名称必须唯一</div>
+                            <div id="roleNameError" class="field-error">角色名称不能为空</div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="roleCode">角色代码 *</label>
+                            <input type="text" id="roleCode" name="code" required>
+                            <div class="info">角色代码用于系统内部识别，必须唯一</div>
+                            <div id="roleCodeError" class="field-error">角色代码不能为空</div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="roleDescription">描述</label>
+                            <textarea id="roleDescription" name="description" rows="3" placeholder="请输入角色描述"></textarea>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>权限设置</label>
+                            <div class="permission-group">
+                                <div class="permission-category">
+                                    <h4>用户管理</h4>
+                                    <div class="permission-items">
+                                        <label class="permission-item">
+                                            <input type="checkbox" name="permissions" value="sys:user:list">
+                                            <span>查看用户列表</span>
+                                        </label>
+                                        <label class="permission-item">
+                                            <input type="checkbox" name="permissions" value="sys:user:view">
+                                            <span>查看用户详情</span>
+                                        </label>
+                                        <label class="permission-item">
+                                            <input type="checkbox" name="permissions" value="sys:user:create">
+                                            <span>创建用户</span>
+                                        </label>
+                                        <label class="permission-item">
+                                            <input type="checkbox" name="permissions" value="sys:user:edit">
+                                            <span>编辑用户</span>
+                                        </label>
+                                        <label class="permission-item">
+                                            <input type="checkbox" name="permissions" value="sys:user:delete">
+                                            <span>删除用户</span>
+                                        </label>
+                                    </div>
+                                </div>
+                                
+                                <div class="permission-category">
+                                    <h4>角色管理</h4>
+                                    <div class="permission-items">
+                                        <label class="permission-item">
+                                            <input type="checkbox" name="permissions" value="sys:role:view">
+                                            <span>查看角色列表</span>
+                                        </label>
+                                        <label class="permission-item">
+                                            <input type="checkbox" name="permissions" value="sys:role:create">
+                                            <span>创建角色</span>
+                                        </label>
+                                        <label class="permission-item">
+                                            <input type="checkbox" name="permissions" value="sys:role:edit">
+                                            <span>编辑角色</span>
+                                        </label>
+                                        <label class="permission-item">
+                                            <input type="checkbox" name="permissions" value="sys:role:delete">
+                                            <span>删除角色</span>
+                                        </label>
+                                    </div>
+                                </div>
+                                
+                                <div class="permission-category">
+                                    <h4>系统管理</h4>
+                                    <div class="permission-items">
+                                        <label class="permission-item">
+                                            <input type="checkbox" name="permissions" value="sys:config:view">
+                                            <span>查看系统配置</span>
+                                        </label>
+                                        <label class="permission-item">
+                                            <input type="checkbox" name="permissions" value="sys:config:edit">
+                                            <span>编辑系统配置</span>
+                                        </label>
+                                        <label class="permission-item">
+                                            <input type="checkbox" name="permissions" value="sys:log:view">
+                                            <span>查看系统日志</span>
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button id="saveRoleBtn" class="save-btn">💾 保存</button>
+                    <button id="cancelRoleBtn" class="cancel-btn">❌ 取消</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 用户角色分配模态框 -->
+        <div id="assignRoleModal" class="modal" style="display: none;">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>分配用户角色</h3>
+                    <span class="close" onclick="app.closeAssignRoleModal()">&times;</span>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label>用户名:</label>
+                        <span id="assignRoleUsername"></span>
+                    </div>
+                    <div class="form-group">
+                        <label>选择角色:</label>
+                        <div id="roleListContainer" class="role-list">
+                            <!-- 角色列表将通过JavaScript动态生成 -->
+                        </div>
+                    </div>
+                    <input type="hidden" id="assignRoleUserId">
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="save-btn" onclick="app.saveUserRoleAssignment()">保存</button>
+                    <button type="button" class="cancel-btn" onclick="app.closeAssignRoleModal()">取消</button>
                 </div>
             </div>
         </div>

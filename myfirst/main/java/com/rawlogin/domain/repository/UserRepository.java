@@ -1,6 +1,6 @@
 package com.rawlogin.domain.repository;
 
-import com.rawlogin.domain.model.User;
+import com.rawlogin.application.dto.UserDTO;
 
 import java.util.List;
 import java.util.Optional;
@@ -13,24 +13,24 @@ public interface UserRepository {
     
     /**
      * 保存用户
-     * @param user 用户对象
-     * @return 保存后的用户对象
+     * @param userDTO 用户数据传输对象
+     * @return 保存后的用户数据传输对象
      */
-    User save(User user);
+    UserDTO save(UserDTO userDTO);
     
     /**
      * 根据ID查找用户
      * @param id 用户ID
-     * @return 用户对象
+     * @return 用户数据传输对象
      */
-    Optional<User> findById(Integer id);
+    Optional<UserDTO> findById(Integer id);
     
     /**
      * 根据用户名查找用户
      * @param username 用户名
-     * @return 用户对象
+     * @return 用户数据传输对象
      */
-    Optional<User> findByUsername(String username);
+    Optional<UserDTO> findByUsername(String username);
     
     /**
      * 检查用户名是否存在
@@ -49,10 +49,10 @@ public interface UserRepository {
     
     /**
      * 更新用户
-     * @param user 用户对象
-     * @return 更新后的用户对象
+     * @param userDTO 用户数据传输对象
+     * @return 更新后的用户数据传输对象
      */
-    User update(User user);
+    UserDTO update(UserDTO userDTO);
     
     /**
      * 删除用户
@@ -70,9 +70,9 @@ public interface UserRepository {
     
     /**
      * 查找所有用户
-     * @return 用户列表
+     * @return 用户数据传输对象列表
      */
-    List<User> findAll();
+    List<UserDTO> findAll();
     
     /**
      * 根据条件查询用户
@@ -80,9 +80,9 @@ public interface UserRepository {
      * @param email 邮箱（可选）
      * @param status 状态（可选）
      * @param role 角色（可选）
-     * @return 用户列表
+     * @return 用户数据传输对象列表
      */
-    List<User> findByCondition(String username, String email, Integer status, String role);
+    List<UserDTO> findByCondition(String username, String email, Integer status, String role);
     
     /**
      * 更新用户最后登录时间

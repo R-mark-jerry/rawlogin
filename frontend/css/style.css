@@ -307,7 +307,7 @@ body {
 }
 
 /* 用户管理页面样式 */
-.user-management-container {
+.user-management-container, .role-management-container {
     background-color: rgba(255, 255, 255, 0.95);
     margin: 20px;
     padding: 30px;
@@ -337,7 +337,7 @@ body {
     margin: 0;
 }
 
-.add-user-btn {
+.add-user-btn, .add-role-btn {
     background-color: #27ae60;
     color: white;
     border: none;
@@ -348,7 +348,7 @@ body {
     transition: background-color 0.3s;
 }
 
-.add-user-btn:hover {
+.add-user-btn:hover, .add-role-btn:hover {
     background-color: #229954;
 }
 
@@ -482,14 +482,14 @@ body {
     font-weight: 500;
 }
 
-.user-table-container {
+.user-table-container, .role-table-container {
     overflow-x: auto;
     border-radius: 8px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
     border: 1px solid #e9ecef;
 }
 
-.user-table {
+.user-table, .role-table {
     width: 100%;
     border-collapse: collapse;
     background-color: white;
@@ -498,7 +498,7 @@ body {
     overflow: hidden;
 }
 
-.user-table th {
+.user-table th, .role-table th {
     background-color: #f8f9fa;
     color: #495057;
     font-weight: 600;
@@ -511,26 +511,26 @@ body {
     z-index: 10;
 }
 
-.user-table td {
+.user-table td, .role-table td {
     padding: 12px;
     border-bottom: 1px solid #dee2e6;
     vertical-align: middle;
     color: #495057;
 }
 
-.user-table tbody tr {
+.user-table tbody tr, .role-table tbody tr {
     transition: background-color 0.2s;
 }
 
-.user-table tbody tr:hover {
+.user-table tbody tr:hover, .role-table tbody tr:hover {
     background-color: #f8f9fa;
 }
 
-.user-table tbody tr:nth-child(even) {
+.user-table tbody tr:nth-child(even), .role-table tbody tr:nth-child(even) {
     background-color: #fdfdfe;
 }
 
-.user-table tbody tr:nth-child(even):hover {
+.user-table tbody tr:nth-child(even):hover, .role-table tbody tr:nth-child(even):hover {
     background-color: #f1f3f5;
 }
 
@@ -694,6 +694,8 @@ body {
 
 .modal-body {
     padding: 20px;
+    max-height: 70vh;
+    overflow-y: auto;
 }
 
 .modal-footer {
@@ -791,4 +793,146 @@ body {
         gap: 10px;
         align-items: flex-start;
     }
+}
+
+/* 角色管理特有样式 */
+.permission-group {
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    padding: 15px;
+    margin-top: 10px;
+}
+
+.permission-category {
+    margin-bottom: 20px;
+}
+
+.permission-category:last-child {
+    margin-bottom: 0;
+}
+
+.permission-category h4 {
+    color: #495057;
+    font-size: 16px;
+    margin-bottom: 10px;
+    padding-bottom: 5px;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.permission-items {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 10px;
+}
+
+.permission-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    padding: 8px 12px;
+    border-radius: 5px;
+    transition: background-color 0.2s;
+}
+
+.permission-item:hover {
+    background-color: #f8f9fa;
+}
+
+.permission-item input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+}
+
+.permission-item span {
+    font-size: 14px;
+    color: #495057;
+}
+
+/* 权限标签样式 */
+.permission-tag {
+    display: inline-block;
+    padding: 2px 6px;
+    margin: 2px;
+    background-color: #e9ecef;
+    color: #495057;
+    border-radius: 10px;
+    font-size: 11px;
+    font-weight: 500;
+}
+
+.permission-tag.user-management {
+    background-color: #d1ecf1;
+    color: #0c5460;
+}
+
+.permission-tag.role-management {
+    background-color: #f8d7da;
+    color: #721c24;
+}
+
+.permission-tag.system-management {
+    background-color: #fff3cd;
+    color: #856404;
+}
+
+/* 响应式设计扩展 */
+@media (max-width: 768px) {
+    .permission-items {
+        grid-template-columns: 1fr;
+    }
+    
+    .permission-item {
+        padding: 10px;
+    }
+}
+/* 角色分配相关样式 */
+.role-list {
+    max-height: 300px;
+    overflow-y: auto;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 10px;
+    background-color: #f9f9f9;
+}
+
+.role-item {
+    display: flex;
+    align-items: center;
+    margin-bottom: 8px;
+    padding: 5px;
+    border-radius: 3px;
+    transition: background-color 0.2s;
+}
+
+.role-item:hover {
+    background-color: #e9ecef;
+}
+
+.role-item input[type="checkbox"] {
+    margin-right: 10px;
+}
+
+.role-item label {
+    margin: 0;
+    font-weight: normal;
+    cursor: pointer;
+    flex: 1;
+}
+
+.btn-role {
+    background-color: #17a2b8;
+    color: white;
+    border: none;
+    padding: 5px 10px;
+    border-radius: 3px;
+    cursor: pointer;
+    font-size: 12px;
+    margin-right: 5px;
+    transition: background-color 0.2s;
+}
+
+.btn-role:hover {
+    background-color: #138496;
 }

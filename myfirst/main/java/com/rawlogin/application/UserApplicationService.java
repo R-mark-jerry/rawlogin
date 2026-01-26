@@ -1,7 +1,8 @@
 package com.rawlogin.application;
 
-import com.rawlogin.domain.model.User;
 import com.rawlogin.application.dto.UserDTO;
+import com.rawlogin.interfaces.vo.UserVO;
+import com.rawlogin.domain.model.User;
 import com.rawlogin.common.Result;
 
 import java.util.List;
@@ -18,41 +19,48 @@ public interface UserApplicationService {
      * @param password 密码
      * @return 登录结果
      */
-    Result<UserDTO> login(String username, String password);
+    Result<UserVO> login(String username, String password);
     
     /**
      * 用户注册用例
-     * @param user 用户对象
+     * @param userDTO 用户数据传输对象
      * @return 注册结果
      */
-    Result<UserDTO> register(User user);
+    Result<UserVO> register(UserDTO userDTO);
+    
+    /**
+     * 用户注册用例（重载，接受User对象）
+     * @param user 用户领域模型
+     * @return 注册结果
+     */
+    Result<UserVO> register(User user);
     
     /**
      * 获取当前用户信息用例
      * @param userId 用户ID
      * @return 用户信息
      */
-    Result<UserDTO> getCurrentUser(Integer userId);
+    Result<UserVO> getCurrentUser(Integer userId);
     
     /**
      * 获取所有用户用例
      * @return 用户列表
      */
-    Result<List<UserDTO>> getAllUsers();
+    Result<List<UserVO>> getAllUsers();
     
     /**
      * 根据ID获取用户用例
      * @param id 用户ID
      * @return 用户信息
      */
-    Result<UserDTO> getUserById(Integer id);
+    Result<UserVO> getUserById(Integer id);
     
     /**
      * 更新用户信息用例
-     * @param user 用户对象
+     * @param userDTO 用户数据传输对象
      * @return 更新结果
      */
-    Result<UserDTO> updateUser(User user);
+    Result<UserVO> updateUser(UserDTO userDTO);
     
     /**
      * 删除用户用例
@@ -76,5 +84,5 @@ public interface UserApplicationService {
      * @param role 角色（可选）
      * @return 查询结果
      */
-    Result<List<UserDTO>> searchUsers(String username, String email, Integer status, String role);
+    Result<List<UserVO>> searchUsers(String username, String email, Integer status, String role);
 }

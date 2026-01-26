@@ -29,4 +29,5 @@ public class ResultCode {
     public static final int ACCOUNT_DISABLED = 604;
     public static final int TOKEN_INVALID = 605;
     public static final int TOKEN_EXPIRED = 606;
+    public static final int PARAM_ERROR = 607 ;
 }

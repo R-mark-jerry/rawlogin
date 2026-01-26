@@ -3,9 +3,7 @@ package com.rawlogin.interfaces;
 import com.rawlogin.application.UserApplicationService;
 import com.rawlogin.application.dto.UserDTO;
 import com.rawlogin.interfaces.vo.UserVO;
-import com.rawlogin.domain.model.User;
 import com.rawlogin.domain.service.UserDomainService;
-import com.rawlogin.application.converter.UserConverter;
 import com.rawlogin.common.Result;
 import com.rawlogin.config.annotation.PreAuthorize;
 import org.slf4j.Logger;
@@ -15,7 +13,6 @@ import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
 import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * 用户管理接口控制器
@@ -42,17 +39,7 @@ public class UserController {
     public Result<List<UserVO>> getAllUsers() {
         logger.info("获取所有用户列表");
         
-        Result<List<UserDTO>> result = userApplicationService.getAllUsers();
-        if (!result.isSuccess()) {
-            return Result.error(result.getMessage());
-        }
-        
-        // 转换为VO列表
-        List<UserVO> userVOs = result.getData().stream()
-                .map(UserConverter::toVO)
-                .collect(Collectors.toList());
-        
-        return Result.success(result.getMessage(), userVOs);
+        return userApplicationService.getAllUsers();
     }
     
     /**
@@ -74,15 +61,7 @@ public class UserController {
             return Result.error("权限不足，只有管理员可以查看其他用户信息");
         }
         
-        Result<UserDTO> result = userApplicationService.getUserById(id);
-        if (!result.isSuccess()) {
-            return Result.error(result.getMessage());
-        }
-        
-        // 转换为VO
-        UserVO userVO = UserConverter.toVO(result.getData());
-        
-        return Result.success(result.getMessage(), userVO);
+        return userApplicationService.getUserById(id);
     }
     
     /**
@@ -102,17 +81,7 @@ public class UserController {
             @RequestParam(required = false) String role) {
         logger.info("根据条件查询用户: username={}, email={}, status={}, role={}", username, email, status, role);
         
-        Result<List<UserDTO>> result = userApplicationService.searchUsers(username, email, status, role);
-        if (!result.isSuccess()) {
-            return Result.error(result.getMessage());
-        }
-        
-        // 转换为VO列表
-        List<UserVO> userVOs = result.getData().stream()
-                .map(UserConverter::toVO)
-                .collect(Collectors.toList());
-        
-        return Result.success(result.getMessage(), userVOs);
+        return userApplicationService.searchUsers(username, email, status, role);
     }
     
     /**
@@ -125,24 +94,16 @@ public class UserController {
     public Result<UserVO> createUser(@RequestBody UserCreateRequest userCreateRequest) {
         logger.info("创建新用户: {}", userCreateRequest.getUsername());
         
-        // 创建用户对象
-        User user = new User();
-        user.setUsername(userCreateRequest.getUsername());
-        user.setPassword(userCreateRequest.getPassword());
-        user.setEmail(userCreateRequest.getEmail());
-        user.setStatus(userCreateRequest.getStatus() != null ? userCreateRequest.getStatus() : 1);
-        user.setRole(userCreateRequest.getRole() != null ? userCreateRequest.getRole() : "USER");
+        // 创建用户DTO对象
+        UserDTO userDTO = new UserDTO();
+        userDTO.setUsername(userCreateRequest.getUsername());
+        userDTO.setPassword(userCreateRequest.getPassword());
+        userDTO.setEmail(userCreateRequest.getEmail());
+        userDTO.setStatus(userCreateRequest.getStatus() != null ? userCreateRequest.getStatus() : 1);
+        userDTO.setRole(userCreateRequest.getRole() != null ? userCreateRequest.getRole() : "USER");
         
         // 调用应用服务层
-        Result<UserDTO> result = userApplicationService.register(user);
-        if (!result.isSuccess()) {
-            return Result.error(result.getMessage());
-        }
-        
-        // 转换为VO
-        UserVO userVO = UserConverter.toVO(result.getData());
-        
-        return Result.success(result.getMessage(), userVO);
+        return userApplicationService.register(userDTO);
     }
     
     /**
@@ -174,29 +135,21 @@ public class UserController {
             return Result.error("普通用户不能修改自己的角色");
         }
         
-        // 创建用户对象
-        User user = new User();
-        user.setId(id);
-        user.setUsername(userUpdateRequest.getUsername());
-        user.setPassword(userUpdateRequest.getPassword());
-        user.setEmail(userUpdateRequest.getEmail());
-        user.setStatus(userUpdateRequest.getStatus());
+        // 创建用户DTO对象
+        UserDTO userDTO = new UserDTO();
+        userDTO.setId(id);
+        userDTO.setUsername(userUpdateRequest.getUsername());
+        userDTO.setPassword(userUpdateRequest.getPassword());
+        userDTO.setEmail(userUpdateRequest.getEmail());
+        userDTO.setStatus(userUpdateRequest.getStatus());
         
         // 只有管理员可以修改角色
         if ("ADMIN".equals(currentRole)) {
-            user.setRole(userUpdateRequest.getRole());
+            userDTO.setRole(userUpdateRequest.getRole());
         }
         
         // 调用应用服务层
-        Result<UserDTO> result = userApplicationService.updateUser(user);
-        if (!result.isSuccess()) {
-            return Result.error(result.getMessage());
-        }
-        
-        // 转换为VO
-        UserVO userVO = UserConverter.toVO(result.getData());
-        
-        return Result.success(result.getMessage(), userVO);
+        return userApplicationService.updateUser(userDTO);
     }
     
     /**

@@ -1,12 +1,14 @@
 package com.rawlogin.application.impl;
 
 import com.rawlogin.application.UserApplicationService;
-import com.rawlogin.domain.model.User;
 import com.rawlogin.application.dto.UserDTO;
+import com.rawlogin.interfaces.vo.UserVO;
 import com.rawlogin.domain.repository.UserRepository;
 import com.rawlogin.domain.service.UserDomainService;
+import com.rawlogin.domain.model.User;
 import com.rawlogin.application.converter.UserConverter;
 import com.rawlogin.common.Result;
+import com.rawlogin.util.PasswordUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -34,27 +36,29 @@ public class UserApplicationServiceImpl implements UserApplicationService {
     private UserDomainService userDomainService;
     
     @Override
-    public Result<UserDTO> login(String username, String password) {
+    public Result<UserVO> login(String username, String password) {
         try {
             logger.info("用户登录尝试: {}", username);
             
-            // 创建用户对象
-            User user = new User(username, password);
-            
             // 验证登录信息
-            Result<String> validationResult = userDomainService.validateLogin(user);
+            Result<String> validationResult = userDomainService.validateLogin(username, password);
             if (!validationResult.isSuccess()) {
                 return Result.error(validationResult.getMessage());
             }
             
             // 查找用户
-            Optional<User> userOpt = userRepository.findByUsername(username);
+            Optional<UserDTO> userOpt = userRepository.findByUsername(username);
             if (!userOpt.isPresent()) {
                 logger.warn("用户不存在: {}", username);
                 return Result.error("用户名或密码错误");
             }
             
-            User foundUser = userOpt.get();
+            UserDTO foundUser = userOpt.get();
+            
+            // 检查密码是否匹配（使用加密比较）
+            if (!PasswordUtil.matches(password, foundUser.getPassword())) {
+                return Result.error("用户名或密码错误");
+            }
             
             // 检查用户是否可以登录
             Result<String> checkResult = userDomainService.checkUserCanLogin(foundUser);
@@ -68,11 +72,11 @@ public class UserApplicationServiceImpl implements UserApplicationService {
             // 清除敏感信息
             userDomainService.clearSensitiveInfo(foundUser);
             
-            // 转换为DTO
-            UserDTO userDTO = UserConverter.toDTO(foundUser);
+            // 转换为VO
+            UserVO userVO = UserConverter.toVO(foundUser);
             
             logger.info("用户登录成功: {}", username);
-            return Result.success("登录成功", userDTO);
+            return Result.success("登录成功", userVO);
             
         } catch (Exception e) {
             logger.error("登录过程中发生异常", e);
@@ -81,12 +85,67 @@ public class UserApplicationServiceImpl implements UserApplicationService {
     }
     
     @Override
-    public Result<UserDTO> register(User user) {
+    public Result<UserVO> register(UserDTO userDTO) {
+        try {
+            logger.info("用户注册尝试: {}", userDTO.getUsername());
+            
+            // 验证注册信息
+            Result<String> validationResult = userDomainService.validateRegistration(
+                userDTO.getUsername(),
+                userDTO.getPassword(),
+                userDTO.getEmail()
+            );
+            if (!validationResult.isSuccess()) {
+                return Result.error(validationResult.getMessage());
+            }
+            
+            // 检查用户名是否已存在
+            if (userRepository.existsByUsername(userDTO.getUsername())) {
+                logger.warn("用户名已存在: {}", userDTO.getUsername());
+                return Result.error("用户名已存在");
+            }
+            
+            // 设置默认值
+            userDomainService.setDefaultsForNewUser(userDTO);
+            
+            // 加密密码
+            String encryptedPassword = PasswordUtil.encode(userDTO.getPassword());
+            userDTO.setPassword(encryptedPassword);
+            
+            // 保存用户
+            UserDTO savedUser = userRepository.save(userDTO);
+            
+            // 清除敏感信息
+            userDomainService.clearSensitiveInfo(savedUser);
+            
+            // 转换为VO
+            UserVO userVO = UserConverter.toVO(savedUser);
+            
+            logger.info("用户注册成功: {}", userDTO.getUsername());
+            return Result.success("注册成功", userVO);
+            
+        } catch (Exception e) {
+            logger.error("注册过程中发生异常", e);
+            return Result.error("系统错误，请稍后再试");
+        }
+    }
+    
+    /**
+     * 用户注册方法（重载，接受User对象）
+     * @param user 用户领域模型
+     * @return 注册结果
+     */
+    public Result<UserVO> register(User user) {
         try {
             logger.info("用户注册尝试: {}", user.getUsername());
             
             // 验证注册信息
-            Result<String> validationResult = userDomainService.validateRegistration(user);
+            Result<String> validationResult = userDomainService.validateRegistration(
+                user.getUsername(),
+                user.getPassword(),
+                user.getEmail()
+            );
+            
             if (!validationResult.isSuccess()) {
                 return Result.error(validationResult.getMessage());
             }
@@ -97,20 +156,30 @@ public class UserApplicationServiceImpl implements UserApplicationService {
                 return Result.error("用户名已存在");
             }
             
+            // 转换为DTO
+            UserDTO userDTO = new UserDTO();
+            userDTO.setUsername(user.getUsername());
+            userDTO.setPassword(user.getPassword());
+            userDTO.setEmail(user.getEmail());
+            
             // 设置默认值
-            userDomainService.setDefaultsForNewUser(user);
+            userDomainService.setDefaultsForNewUser(userDTO);
+            
+            // 加密密码
+            String encryptedPassword = PasswordUtil.encode(userDTO.getPassword());
+            userDTO.setPassword(encryptedPassword);
             
             // 保存用户
-            User savedUser = userRepository.save(user);
+            UserDTO savedUser = userRepository.save(userDTO);
             
             // 清除敏感信息
             userDomainService.clearSensitiveInfo(savedUser);
             
-            // 转换为DTO
-            UserDTO userDTO = UserConverter.toDTO(savedUser);
+            // 转换为VO
+            UserVO userVO = UserConverter.toVO(savedUser);
             
             logger.info("用户注册成功: {}", user.getUsername());
-            return Result.success("注册成功", userDTO);
+            return Result.success("注册成功", userVO);
             
         } catch (Exception e) {
             logger.error("注册过程中发生异常", e);
@@ -119,20 +188,20 @@ public class UserApplicationServiceImpl implements UserApplicationService {
     }
     
     @Override
-    public Result<UserDTO> getCurrentUser(Integer userId) {
+    public Result<UserVO> getCurrentUser(Integer userId) {
         try {
-            Optional<User> userOpt = userRepository.findById(userId);
+            Optional<UserDTO> userOpt = userRepository.findById(userId);
             if (!userOpt.isPresent()) {
                 return Result.error("用户不存在");
             }
             
-            User user = userOpt.get();
-            userDomainService.clearSensitiveInfo(user);
+            UserDTO userDTO = userOpt.get();
+            userDomainService.clearSensitiveInfo(userDTO);
             
-            // 转换为DTO
-            UserDTO userDTO = UserConverter.toDTO(user);
+            // 转换为VO
+            UserVO userVO = UserConverter.toVO(userDTO);
             
-            return Result.success("获取用户信息成功", userDTO);
+            return Result.success("获取用户信息成功", userVO);
         } catch (Exception e) {
             logger.error("获取当前用户信息时发生异常: {}", userId, e);
             return Result.error("系统错误，请稍后再试");
@@ -140,19 +209,19 @@ public class UserApplicationServiceImpl implements UserApplicationService {
     }
     
     @Override
-    public Result<List<UserDTO>> getAllUsers() {
+    public Result<List<UserVO>> getAllUsers() {
         try {
-            List<User> users = userRepository.findAll();
+            List<UserDTO> userDTOs = userRepository.findAll();
             
             // 清除所有用户的敏感信息
-            users.forEach(userDomainService::clearSensitiveInfo);
+            userDTOs.forEach(userDomainService::clearSensitiveInfo);
             
-            // 转换为DTO列表
-            List<UserDTO> userDTOs = users.stream()
-                    .map(UserConverter::toDTO)
+            // 转换为VO列表
+            List<UserVO> userVOs = userDTOs.stream()
+                    .map(UserConverter::toVO)
                     .collect(Collectors.toList());
             
-            return Result.success("获取用户列表成功", userDTOs);
+            return Result.success("获取用户列表成功", userVOs);
         } catch (Exception e) {
             logger.error("获取用户列表时发生异常", e);
             return Result.error("系统错误，请稍后再试");
@@ -160,20 +229,20 @@ public class UserApplicationServiceImpl implements UserApplicationService {
     }
     
     @Override
-    public Result<UserDTO> getUserById(Integer id) {
+    public Result<UserVO> getUserById(Integer id) {
         try {
-            Optional<User> userOpt = userRepository.findById(id);
+            Optional<UserDTO> userOpt = userRepository.findById(id);
             if (!userOpt.isPresent()) {
                 return Result.error("用户不存在");
             }
             
-            User user = userOpt.get();
-            userDomainService.clearSensitiveInfo(user);
+            UserDTO userDTO = userOpt.get();
+            userDomainService.clearSensitiveInfo(userDTO);
             
-            // 转换为DTO
-            UserDTO userDTO = UserConverter.toDTO(user);
+            // 转换为VO
+            UserVO userVO = UserConverter.toVO(userDTO);
             
-            return Result.success("找到用户", userDTO);
+            return Result.success("找到用户", userVO);
         } catch (Exception e) {
             logger.error("根据ID查找用户时发生异常: {}", id, e);
             return Result.error("系统错误，请稍后再试");
@@ -181,27 +250,33 @@ public class UserApplicationServiceImpl implements UserApplicationService {
     }
     
     @Override
-    public Result<UserDTO> updateUser(User user) {
+    public Result<UserVO> updateUser(UserDTO userDTO) {
         try {
             // 参数验证
-            if (user.getId() == null) {
+            if (userDTO.getId() == null) {
                 return Result.error("用户ID不能为空");
             }
             
             // 检查用户名是否已存在（排除当前用户）
-            if (userRepository.existsByUsernameAndExcludeId(user.getUsername(), user.getId())) {
+            if (userRepository.existsByUsernameAndExcludeId(userDTO.getUsername(), userDTO.getId())) {
                 return Result.error("用户名已存在");
             }
             
+            // 如果提供了新密码，则加密
+            if (userDTO.getPassword() != null && !userDTO.getPassword().isEmpty()) {
+                String encryptedPassword = PasswordUtil.encode(userDTO.getPassword());
+                userDTO.setPassword(encryptedPassword);
+            }
+            
             // 更新用户
-            User updatedUser = userRepository.update(user);
+            UserDTO updatedUser = userRepository.update(userDTO);
             userDomainService.clearSensitiveInfo(updatedUser);
             
-            // 转换为DTO
-            UserDTO userDTO = UserConverter.toDTO(updatedUser);
+            // 转换为VO
+            UserVO userVO = UserConverter.toVO(updatedUser);
             
-            logger.info("用户更新成功: {}", user.getUsername());
-            return Result.success("更新成功", userDTO);
+            logger.info("用户更新成功: {}", userDTO.getUsername());
+            return Result.success("更新成功", userVO);
         } catch (Exception e) {
             logger.error("更新用户时发生异常", e);
             return Result.error("系统错误，请稍后再试");
@@ -212,7 +287,7 @@ public class UserApplicationServiceImpl implements UserApplicationService {
     public Result<Void> deleteUser(Integer id) {
         try {
             // 检查用户是否存在
-            Optional<User> userOpt = userRepository.findById(id);
+            Optional<UserDTO> userOpt = userRepository.findById(id);
             if (!userOpt.isPresent()) {
                 return Result.error("用户不存在");
             }
@@ -253,19 +328,19 @@ public class UserApplicationServiceImpl implements UserApplicationService {
     }
     
     @Override
-    public Result<List<UserDTO>> searchUsers(String username, String email, Integer status, String role) {
+    public Result<List<UserVO>> searchUsers(String username, String email, Integer status, String role) {
         try {
-            List<User> users = userRepository.findByCondition(username, email, status, role);
+            List<UserDTO> userDTOs = userRepository.findByCondition(username, email, status, role);
             
             // 清除所有用户的敏感信息
-            users.forEach(userDomainService::clearSensitiveInfo);
+            userDTOs.forEach(userDomainService::clearSensitiveInfo);
             
-            // 转换为DTO列表
-            List<UserDTO> userDTOs = users.stream()
-                    .map(UserConverter::toDTO)
+            // 转换为VO列表
+            List<UserVO> userVOs = userDTOs.stream()
+                    .map(UserConverter::toVO)
                     .collect(Collectors.toList());
             
-            return Result.success("查询成功", userDTOs);
+            return Result.success("查询成功", userVOs);
         } catch (Exception e) {
             logger.error("根据条件查询用户时发生异常", e);
             return Result.error("系统错误，请稍后再试");
