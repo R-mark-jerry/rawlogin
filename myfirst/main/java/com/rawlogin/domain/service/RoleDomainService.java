@@ -3,10 +3,16 @@ package com.rawlogin.domain.service;
 import com.rawlogin.domain.repository.RoleRepository;
 import com.rawlogin.application.dto.RoleDTO;
 import com.rawlogin.common.Result;
+import com.rawlogin.infrastructure.persistence.RolePermissionMapper;
+import com.rawlogin.infrastructure.po.RolePermissionPO;
+import com.rawlogin.infrastructure.persistence.PermissionMapper;
+import com.rawlogin.infrastructure.po.PermissionPO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * 角色领域服务
@@ -17,6 +23,12 @@ public class RoleDomainService {
     
     @Autowired
     private RoleRepository roleRepository;
+    
+    @Autowired
+    private RolePermissionMapper rolePermissionMapper;
+    
+    @Autowired
+    private PermissionMapper permissionMapper;
     
     /**
      * 获取所有角色
@@ -79,7 +91,16 @@ public class RoleDomainService {
             }
             
             RoleDTO savedRole = roleRepository.save(roleDTO);
-            return Result.success("角色创建成功", savedRole);
+            
+            // 为新创建的角色设置权限
+            if (savedRole != null && roleDTO.getPermissions() != null && !roleDTO.getPermissions().isEmpty()) {
+                updateRolePermissions(savedRole.getId(), roleDTO.getPermissions());
+            }
+            
+            // 重新获取角色信息（包括权限）
+            RoleDTO roleWithPermissions = roleRepository.findById(savedRole.getId());
+            
+            return Result.success("角色创建成功", roleWithPermissions);
         } catch (Exception e) {
             return Result.error("角色创建失败: " + e.getMessage());
         }
@@ -90,6 +111,7 @@ public class RoleDomainService {
      * @param roleDTO 角色数据传输对象
      * @return 更新结果
      */
+    @Transactional
     public Result<RoleDTO> updateRole(RoleDTO roleDTO) {
         try {
             // 检查角色是否存在
@@ -109,7 +131,12 @@ public class RoleDomainService {
                 return Result.error("角色代码已被其他角色使用");
             }
             
-            RoleDTO updatedRole = roleRepository.update(roleDTO);
+            // 更新角色权限
+            updateRolePermissions(roleDTO.getId(), roleDTO.getPermissions());
+            
+            // 重新获取角色信息（包括权限）
+            RoleDTO updatedRole = roleRepository.findById(roleDTO.getId());
+            
             return Result.success("角色更新成功", updatedRole);
         } catch (Exception e) {
             return Result.error("角色更新失败: " + e.getMessage());
@@ -253,12 +280,93 @@ public class RoleDomainService {
     
     // 业务规则：检查角色是否有指定权限
     private boolean hasPermission(RoleDTO role, String permissionCode) {
-        // 简化处理，实际应该通过角色权限关联表来查询
+        // 通过角色权限关联表来查询
         if (isBuiltIn(role.getCode())) {
             // 内置角色拥有所有权限
             return true;
         }
-        // 自定义角色权限检查逻辑
-        return false;
+        
+        // 对于自定义角色，查询角色权限关联表
+        List<PermissionPO> permissions = permissionMapper.findByRoleId(role.getId());
+        if (permissions == null || permissions.isEmpty()) {
+            // 如果角色没有关联权限，则没有权限
+            return false;
+        }
+        
+        return permissions.stream()
+                .anyMatch(permission -> permissionCode.equals(permission.getCode()));
+    }
+    
+    /**
+     * 更新角色权限
+     * @param roleId 角色ID
+     * @param permissionCodes 权限代码列表
+     */
+    private void updateRolePermissions(Integer roleId, List<String> permissionCodes) {
+        if (permissionCodes == null) {
+            permissionCodes = new java.util.ArrayList<>();
+        }
+        
+        // 先删除角色现有的所有权限
+        rolePermissionMapper.deleteByRoleId(roleId);
+        
+        // 为角色添加新权限
+        for (String permissionCode : permissionCodes) {
+            // 根据权限代码查找权限ID
+            PermissionPO permission = permissionMapper.findByCode(permissionCode);
+            if (permission != null) {
+                RolePermissionPO rolePermission = new RolePermissionPO();
+                rolePermission.setRoleId(roleId);
+                rolePermission.setPermissionId(permission.getId());
+                rolePermissionMapper.insert(rolePermission);
+            }
+        }
+    }
+
+    /**
+     * 获取所有角色（包含权限信息）
+     * @return 角色列表
+     */
+    public Result<List<RoleDTO>> getAllRolesWithPermissions() {
+        try {
+            List<RoleDTO> roles = roleRepository.findAll();
+            System.out.println("DEBUG: RoleDomainService.getAllRolesWithPermissions 返回 " + roles.size() + " 个角色");
+            
+            // 为每个角色加载权限信息
+            for (RoleDTO role : roles) {
+                role.setPermissions(loadRolePermissions(role.getId()));
+            }
+            
+            System.out.println("DEBUG: 最终返回 " + roles.size() + " 个角色（含权限信息）");
+            return Result.success("获取角色列表成功", roles);
+        } catch (Exception e) {
+            System.out.println("DEBUG: 获取角色列表异常: " + e.getMessage());
+            return Result.error("获取角色列表失败: " + e.getMessage());
+        }
+    }
+
+    /**
+     * 加载角色的权限信息
+     * @param roleId 角色ID
+     * @return 权限代码列表
+     */
+    private List<String> loadRolePermissions(Integer roleId) {
+        if (roleId == null) {
+            return new java.util.ArrayList<>();
+        }
+        
+        // 通过角色ID获取权限列表
+        List<PermissionPO> permissionPOs = 
+            permissionMapper.findByRoleId(roleId);
+        
+        // 如果没有找到权限，返回空列表而不是null
+        if (permissionPOs == null || permissionPOs.isEmpty()) {
+            return new java.util.ArrayList<>();
+        }
+        
+        // 提取权限代码
+        return permissionPOs.stream()
+                .map(PermissionPO::getCode)
+                .collect(java.util.stream.Collectors.toList());
     }
 }

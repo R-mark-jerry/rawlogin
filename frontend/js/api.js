@@ -215,7 +215,7 @@ class ApiClient {
     // 获取所有角色
     async getAllRoles() {
         try {
-            const response = await this.axios.get('/api/roles/list');
+            const response = await this.axios.get('/api/roles');
             return response.data;
         } catch (error) {
             throw this.handleError(error);
@@ -225,7 +225,7 @@ class ApiClient {
     // 添加角色
     async addRole(roleData) {
         try {
-            const response = await this.axios.post('/api/roles/create', roleData);
+            const response = await this.axios.post('/api/roles', roleData);
             return response.data;
         } catch (error) {
             throw this.handleError(error);

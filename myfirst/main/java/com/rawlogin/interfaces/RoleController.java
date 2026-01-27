@@ -32,11 +32,11 @@ public class RoleController {
      * @return 角色列表
      */
     @GetMapping
-    @PreAuthorize(value = "sys:role:list", authenticated = true)
+    @PreAuthorize(value = "sys:role:view", authenticated = true)
     public Result<List<RoleVO>> getAllRoles() {
         logger.info("获取所有角色列表");
         
-        return roleApplicationService.getAllRoles();
+        return roleApplicationService.getAllRolesWithPermissions();
     }
     
     /**
@@ -61,7 +61,7 @@ public class RoleController {
      * @return 查询结果
      */
     @GetMapping("/search")
-    @PreAuthorize(value = "sys:role:list", authenticated = true)
+    @PreAuthorize(value = "sys:role:view", authenticated = true)
     public Result<List<RoleVO>> searchRoles(
             @RequestParam(required = false) String name,
             @RequestParam(required = false) String code,

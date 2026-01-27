@@ -86,4 +86,10 @@ public interface RoleApplicationService {
      * @return 移除结果
      */
     Result<Void> removePermission(Integer roleId, String permissionCode);
+    
+    /**
+     * 获取所有角色（包含权限信息）
+     * @return 角色列表
+     */
+    Result<List<RoleVO>> getAllRolesWithPermissions();
 }

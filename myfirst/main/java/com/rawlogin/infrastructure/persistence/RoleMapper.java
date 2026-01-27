@@ -24,6 +24,13 @@ public interface RoleMapper extends BaseMapper<RolePO> {
     RolePO findByCode(@Param("roleCode") String roleCode);
     
     /**
+     * 查询所有角色
+     * @return 角色列表
+     */
+    @Select("SELECT * FROM roles ORDER BY id")
+    List<RolePO> findAll();
+    
+    /**
      * 查询所有启用的角色
      * @return 角色列表
      */
@@ -49,14 +56,11 @@ public interface RoleMapper extends BaseMapper<RolePO> {
             "<if test='status != null'>" +
             "AND status = #{status} " +
             "</if>" +
-            "<if test='builtIn != null'>" +
-            "AND built_in = #{builtIn} " +
-            "</if>" +
             "ORDER BY id" +
             "</script>")
-    List<RolePO> searchRoles(@Param("name") String name, 
-                           @Param("code") String code, 
-                           @Param("status") Integer status, 
+    List<RolePO> searchRoles(@Param("name") String name,
+                           @Param("code") String code,
+                           @Param("status") Integer status,
                            @Param("builtIn") Boolean builtIn);
     
     /**
@@ -66,7 +70,7 @@ public interface RoleMapper extends BaseMapper<RolePO> {
      */
     @Delete("<script>" +
             "DELETE FROM roles WHERE id IN " +
-            "<foreach item='id' collection='ids' open='(' separator=',' close=')'>" +
+            "<foreach item='id' collection='ids' open='(' separator=',' close=')'> " +
             "#{id}" +
             "</foreach>" +
             "</script>")
@@ -79,6 +83,14 @@ public interface RoleMapper extends BaseMapper<RolePO> {
      */
     @Select("SELECT r.* FROM roles r " +
             "INNER JOIN user_roles ur ON r.id = ur.role_id " +
-            "WHERE ur.user_id = #{userId} AND r.status = 1")
+            "WHERE ur.user_id = #{userId}")
     List<RolePO> findByUserId(@Param("userId") Integer userId);
+    
+    /**
+     * 根据角色ID删除角色权限关联
+     * @param roleId 角色ID
+     * @return 删除的记录数
+     */
+    @Delete("DELETE FROM role_permissions WHERE role_id = #{roleId}")
+    int deleteRolePermissionsByRoleId(@Param("roleId") Integer roleId);
 }

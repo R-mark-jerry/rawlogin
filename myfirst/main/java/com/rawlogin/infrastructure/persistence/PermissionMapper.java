@@ -49,4 +49,6 @@ public interface PermissionMapper extends BaseMapper<PermissionPO> {
             "INNER JOIN user_roles ur ON rp.role_id = ur.role_id " +
             "WHERE ur.user_id = #{userId}")
     List<PermissionPO> findByUserId(@Param("userId") Integer userId);
+    
+
 }

@@ -3,10 +3,12 @@ package com.rawlogin.domain.service;
 import com.rawlogin.domain.repository.UserRepository;
 import com.rawlogin.domain.repository.RoleRepository;
 import com.rawlogin.application.dto.RoleDTO;
+import com.rawlogin.infrastructure.po.UserPO;
 import com.rawlogin.infrastructure.po.UserRolePO;
 import com.rawlogin.infrastructure.persistence.UserRoleMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -42,6 +44,7 @@ public class UserRoleDomainService {
      * @param roleIds 角色ID列表
      * @return 是否成功
      */
+    @Transactional(rollbackFor = Exception.class)
     public boolean assignRolesToUser(Integer userId, List<Integer> roleIds) {
         // 检查用户是否存在
         if (userRepository.findById(userId) == null) {
@@ -66,7 +69,48 @@ public class UserRoleDomainService {
             userRoleMapper.insert(userRole);
         }
         
+        // 同步更新用户表中的角色字段（选择优先级最高的角色）
+        if (!roleIds.isEmpty()) {
+            // 获取角色信息，按优先级排序（ADMIN优先）
+            List<RoleDTO> assignedRoles = roleIds.stream()
+                    .map(roleId -> roleRepository.findById(roleId))
+                    .filter(role -> role != null)
+                    .collect(java.util.stream.Collectors.toList());
+            
+            String primaryRole = determinePrimaryRole(assignedRoles);
+            
+            // 更新用户表的角色字段，使用PO对象
+            UserPO userPO = userRoleMapper.selectUserPOById(userId);
+            if (userPO == null) {
+                throw new RuntimeException("用户不存在");
+            }
+            userPO.setRole(primaryRole);
+            userRoleMapper.updateUserRoleById(userPO);
+        }
+        
         return true;
+    }
+    
+    /**
+     * 确定主要角色（按优先级）
+     * @param roles 角色列表
+     * @return 主要角色代码
+     */
+    private String determinePrimaryRole(List<RoleDTO> roles) {
+        // 如果有ADMIN角色，优先使用ADMIN
+        for (RoleDTO role : roles) {
+            if (role != null && "ADMIN".equals(role.getCode())) {
+                return "ADMIN";
+            }
+        }
+        
+        // 否则返回第一个角色
+        if (!roles.isEmpty() && roles.get(0) != null) {
+            return roles.get(0).getCode();
+        }
+        
+        // 默认返回USER
+        return "USER";
     }
     
     /**
@@ -74,6 +118,7 @@ public class UserRoleDomainService {
      * @param userId 用户ID
      * @return 是否成功
      */
+    @Transactional(rollbackFor = Exception.class)
     public boolean removeAllRolesFromUser(Integer userId) {
         return userRoleMapper.deleteByUserId(userId) > 0;
     }
@@ -84,6 +129,7 @@ public class UserRoleDomainService {
      * @param roleId 角色ID
      * @return 是否成功
      */
+    @Transactional(rollbackFor = Exception.class)
     public boolean removeRoleFromUser(Integer userId, Integer roleId) {
         return userRoleMapper.deleteByUserIdAndRoleId(userId, roleId) > 0;
     }

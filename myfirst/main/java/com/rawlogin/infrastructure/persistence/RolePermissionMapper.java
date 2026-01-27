@@ -2,6 +2,7 @@ package com.rawlogin.infrastructure.persistence;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.rawlogin.infrastructure.po.RolePermissionPO;
+import org.apache.ibatis.annotations.Delete;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
@@ -17,7 +18,7 @@ public interface RolePermissionMapper extends BaseMapper<RolePermissionPO> {
      * @param roleId 角色ID
      * @return 删除的记录数
      */
-    @Select("DELETE FROM role_permissions WHERE role_id = #{roleId}")
+    @Delete("DELETE FROM role_permissions WHERE role_id = #{roleId}")
     int deleteByRoleId(@Param("roleId") Integer roleId);
     
     /**
@@ -26,6 +27,6 @@ public interface RolePermissionMapper extends BaseMapper<RolePermissionPO> {
      * @param permissionId 权限ID
      * @return 删除的记录数
      */
-    @Select("DELETE FROM role_permissions WHERE role_id = #{roleId} AND permission_id = #{permissionId}")
+    @Delete("DELETE FROM role_permissions WHERE role_id = #{roleId} AND permission_id = #{permissionId}")
     int deleteByRoleIdAndPermissionId(@Param("roleId") Integer roleId, @Param("permissionId") Integer permissionId);
 }
