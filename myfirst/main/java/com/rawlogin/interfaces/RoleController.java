@@ -112,7 +112,8 @@ public class RoleController {
         roleDTO.setName(roleUpdateRequest.getName());
         roleDTO.setCode(roleUpdateRequest.getCode());
         roleDTO.setDescription(roleUpdateRequest.getDescription());
-        roleDTO.setStatus(roleUpdateRequest.getStatus());
+        // 如果status为null，默认设置为1（启用）
+        roleDTO.setStatus(roleUpdateRequest.getStatus() != null ? roleUpdateRequest.getStatus() : 1);
         roleDTO.setPermissions(roleUpdateRequest.getPermissions());
         
         // 调用应用服务层

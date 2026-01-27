@@ -179,19 +179,15 @@ public class RoleApplicationServiceImpl implements RoleApplicationService {
     @Override
     public Result<List<RoleVO>> getAllRolesWithPermissions() {
         try {
-            System.out.println("DEBUG: 开始调用 roleDomainService.getAllRolesWithPermissions()");
             Result<List<RoleDTO>> result = roleDomainService.getAllRolesWithPermissions();
-            System.out.println("DEBUG: 从 domain service 返回结果，成功: " + result.isSuccess() + ", 数据大小: " + (result.getData() != null ? result.getData().size() : 0));
             if (!result.isSuccess()) {
                 return Result.error(result.getMessage());
             }
             
             List<RoleVO> roleVOs = RoleConverter.toVOList(result.getData());
-            System.out.println("DEBUG: 转换为VO后，角色数量: " + roleVOs.size());
             
             return Result.success(result.getMessage(), roleVOs);
         } catch (Exception e) {
-            System.out.println("DEBUG: Application Service 获取角色列表异常: " + e.getMessage());
             return Result.error(ResultCode.INTERNAL_SERVER_ERROR, "获取角色列表失败: " + e.getMessage());
         }
     }

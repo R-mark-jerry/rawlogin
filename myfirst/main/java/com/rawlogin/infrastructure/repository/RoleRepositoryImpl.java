@@ -29,10 +29,6 @@ public class RoleRepositoryImpl implements RoleRepository {
     @Override
     public List<RoleDTO> findAll() {
         List<RolePO> rolePOs = roleMapper.findAll();
-        System.out.println("DEBUG: RoleMapper.findAll() 返回 " + rolePOs.size() + " 个角色");
-        for (RolePO rolePO : rolePOs) {
-            System.out.println("DEBUG: 角色ID: " + rolePO.getId() + ", 名称: " + rolePO.getName() + ", 代码: " + rolePO.getCode() + ", 状态: " + rolePO.getStatus());
-        }
         List<RoleDTO> roleDTOs = RoleConverter.toDTOList(rolePOs);
         
         // 为每个角色加载权限信息
@@ -40,7 +36,6 @@ public class RoleRepositoryImpl implements RoleRepository {
             roleDTO.setPermissions(loadRolePermissions(roleDTO.getId()));
         }
         
-        System.out.println("DEBUG: 最终返回 " + roleDTOs.size() + " 个角色DTO");
         return roleDTOs;
     }
     

@@ -131,11 +131,14 @@ public class RoleDomainService {
                 return Result.error("角色代码已被其他角色使用");
             }
             
+            // 更新角色基本信息
+            RoleDTO updatedRole = roleRepository.update(roleDTO);
+            
             // 更新角色权限
             updateRolePermissions(roleDTO.getId(), roleDTO.getPermissions());
             
             // 重新获取角色信息（包括权限）
-            RoleDTO updatedRole = roleRepository.findById(roleDTO.getId());
+            updatedRole = roleRepository.findById(roleDTO.getId());
             
             return Result.success("角色更新成功", updatedRole);
         } catch (Exception e) {
@@ -330,17 +333,14 @@ public class RoleDomainService {
     public Result<List<RoleDTO>> getAllRolesWithPermissions() {
         try {
             List<RoleDTO> roles = roleRepository.findAll();
-            System.out.println("DEBUG: RoleDomainService.getAllRolesWithPermissions 返回 " + roles.size() + " 个角色");
             
             // 为每个角色加载权限信息
             for (RoleDTO role : roles) {
                 role.setPermissions(loadRolePermissions(role.getId()));
             }
             
-            System.out.println("DEBUG: 最终返回 " + roles.size() + " 个角色（含权限信息）");
             return Result.success("获取角色列表成功", roles);
         } catch (Exception e) {
-            System.out.println("DEBUG: 获取角色列表异常: " + e.getMessage());
             return Result.error("获取角色列表失败: " + e.getMessage());
         }
     }
